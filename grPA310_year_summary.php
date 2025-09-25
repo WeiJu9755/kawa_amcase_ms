@@ -840,7 +840,8 @@ $show_report=<<<EOT
 	<div class="myrow">
 		<div class="mycell" style="width:100%;padding: 0;vertical-align: bottom;">
 			<div style="width:auto;min-height:500px;margin: 0 auto;padding:20px;">
-				<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year</div>
+				<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year &nbsp;&nbsp;&nbsp;&nbsp;
+			<a role="button" class="btn btn-primary" href="/index.php?ch=grPA310_year_summary_excel&site_db=$site_db&case_id=$case_id&current_year=$current_year&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a></div>
 				<div style="float:right;width:150px;text-align:right;padding: 5px 20px 5px 0;margin:-40px 0 20px 0;"></div>
 				<div style="width:100%;">
 					$show_analysis

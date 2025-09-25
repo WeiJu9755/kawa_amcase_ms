@@ -968,7 +968,8 @@ $show_report=<<<EOT
 	<div class="myrow">
 		<div class="mycell" style="width:100%;padding: 0;vertical-align: bottom;">
 			<div style="width:auto;min-height:500px;margin: 0 auto;padding:20px;">
-			<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year</div>
+			<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year &nbsp;&nbsp;&nbsp;&nbsp;
+			<a role="button" class="btn btn-primary" href="/index.php?ch=grPA310_month_summary_excel&site_db=$site_db&case_id=$case_id&current_year=$current_year&current_month=$current_month&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a></div>
 			<div style="float:right;width:150px;text-align:right;padding: 5px 20px 5px 0;margin:-40px 0 20px 0;"></div>
 			<div style="width:100%;">
 				$show_analysis
@@ -990,7 +991,8 @@ $show_report=<<<EOT
 	<h3 class="weight text-left p-3">$Title_01</h3>
 	<hr class="half-rule" style="margin: 0;padding:0;border-color:$panel_bgcolor;">
 	<div style="width:100%;max-width:1600px;min-height:500px;margin: 0 auto;padding:20px;background-color:#fff;">
-		<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year</div>
+		<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year &nbsp;&nbsp;&nbsp;&nbsp;
+			<a role="button" class="btn btn-primary" href="/index.php?ch=grPA310_month_summary_excel&site_db=$site_db&case_id=$case_id&current_year=$current_year&current_month=$current_month&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a></div>
 		<div style="float:right;width:150px;text-align:right;padding: 5px 20px 5px 0;margin:-40px 0 20px 0;"></div>
 		<div style="width:100%;overflow-x: auto;">
 			<div style="width:100%;min-width:1400px;">
