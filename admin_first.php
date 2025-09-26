@@ -182,8 +182,15 @@ switch($ch) {
 		break;
 	case 'amcase_month_summary':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/amcase_month_summary.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'amcase_month_summary_merge':
+		if (empty($sid))
+			$sid = "pjhome01";
+		$modal = $m_pub_modal."/green/amcase_ms/amcase_month_summary_merge.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
@@ -196,8 +203,15 @@ switch($ch) {
 		break;
 	case 'amcase_day_summary':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/amcase_day_summary.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'amcase_day_summary_merge':
+		if (empty($sid))
+			$sid = "pjhome01";
+		$modal = $m_pub_modal."/green/amcase_ms/amcase_day_summary_merge.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
@@ -210,15 +224,22 @@ switch($ch) {
 		break;
 	case 'amcase_hour_summary':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/amcase_hour_summary.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
 	case 'amcase_hour_summary2':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/amcase_hour_summary2.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'amcase_hour_summary_merge':
+		if (empty($sid))
+			$sid = "pjhome01";
+		$modal = $m_pub_modal."/green/amcase_ms/amcase_hour_summary_merge.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
@@ -280,21 +301,35 @@ switch($ch) {
 		break;
 	case 'grPA310_year_summary':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/grPA310_year_summary.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'grPA310_year_summary_excel':
+		if (empty($sid))
+			$sid = "view01";
+		$modal = $m_pub_modal."/green/amcase_ms/grPA310_year_summary_excel.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
 	case 'grPA310_month_summary':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/grPA310_month_summary.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'grPA310_month_summary_excel':
+		if (empty($sid))
+			$sid = "view01";
+		$modal = $m_pub_modal."/green/amcase_ms/grPA310_month_summary_excel.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
 	case 'grPA310_day_summary':
 		if (empty($sid))
-			$sid = "view01";
+			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/grPA310_day_summary.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
