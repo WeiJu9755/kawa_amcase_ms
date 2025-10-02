@@ -118,7 +118,7 @@ $objPHPExcel->setActiveSheetIndex(0)
             ->setCellValue('A2', '分電表用電月報表')
             ->setCellValue('A3', '資料年月份：'.$current_year.'年'.$current_month.'月')
             ->setCellValue('R3', '單位 : KWH     報表日期：'.$today)
-            ->setCellValue('A4', '設備名稱/日期')
+            ->setCellValue('A4', '合併節點')
             ->setCellValue('B4', '1日')
             ->setCellValue('C4', '2日')
             ->setCellValue('D4', '3日')
@@ -214,303 +214,270 @@ $mDB = new MywebDB();
 $mDB2 = "";
 $mDB2 = new MywebDB();
 
+$fm = $_GET['fm'];
+$ch = $_GET['ch'];
+$case_id = $_GET['case_id'];
 
-//先取得總和
-//先取得量測節點
-$Qry="SELECT case_id,router_id,ammeter_id,node_no FROM ammeter_node
-WHERE case_id = '$case_id' AND `enabled` = 'Y' AND main_meter = 'N'
-ORDER BY orderby";
+$current_year = $_GET['current_year'];
+if (!isset($_GET['current_year']))
+	$current_year = date('Y');
+
+$current_month = $_GET['current_month'];
+if (!isset($_GET['current_month']))
+	$current_month = date('m');
+
+$m_period = $current_year."年".$current_month."月";
+
+//取得年月份
+$Qry="SELECT am_year,am_month FROM ammeter_node_kwh_day
+WHERE case_id = '$case_id' 
+GROUP BY case_id,am_year,am_month ORDER BY case_id,am_year DESC,am_month DESC";
+
 $mDB->query($Qry);
-
-$KWH_SUMMARY_TOT = 0;		//全部總和
-
+$m_year  = "";
 if ($mDB->rowCount() > 0) {
+	$m_year  = "<select class=\"inline form-control\" name=\"period_list\" id=\"period_list\" style=\"width:auto;\">";
+	$n = 0;
 	while ($row=$mDB->fetchRow(2)) {
-		$case_id = $row['case_id'];
-		$router_id = $row['router_id'];
-		$ammeter_id = $row['ammeter_id'];
-		$node_no = $row['node_no'];
-
-		$Qry2="SELECT * FROM ammeter_node_kwh_day
-			WHERE case_id = '$case_id' AND router_id = '$router_id' AND ammeter_id = '$ammeter_id'
-			AND am_year = '$current_year' AND am_month = '$current_month'
-			";
-		$mDB2->query($Qry2);
-		if ($mDB2->rowCount() > 0) {
-			while ($row2=$mDB2->fetchRow(2)) {
-
-				for ($i = 0; $i <= 30; $i++) {
-					$DAY = $row2['am_day'];
-					if ($DAY == $i+1) {
-						$KWH = "KWH_".$node_no;
-						//累計總和
-						$KWH_SUMMARY_TOT = $KWH_SUMMARY_TOT+$row2[$KWH];
-					}
-				}
-
+	
+		$o_current_year = $row['am_year'];
+		$o_current_month = $row['am_month'];
+		$o_period = $o_current_year."年".$o_current_month."月";
+		
+		$m_year .=  "<option value='/index.php?ch=$ch&case_id=$case_id&current_year=".$o_current_year."&current_month=".$o_current_month."&fm=$fm' ".mySelect($o_period,$m_period).">$o_period</option>";
+		
+		$n++;
+		if ($n == 1) {
+			if (!isset($_GET['current_year'])) {
+				$current_year = $o_current_year;
+				$current_month = $o_current_month;
+				$m_period = $current_year."年".$current_month."月";
 			}
 		}
+		
 	}
+	$m_year .= "</select>";
 }
 
-
-$line = 4;
+//先取得量測節點總和
+$KWH_SUMMARY_TOT = 0;		//全部總和
 
 //先取得量測節點
-$Qry="SELECT * FROM ammeter_node
-WHERE case_id = '$case_id' AND `enabled` = 'Y' AND main_meter = 'N'
-ORDER BY orderby";
+$Qry="SELECT a.merge_node,a.case_id,a.router_id,a.ammeter_id,b.am_year,b.am_month,b.am_day,a.node_no
+,b.KWH_1
+,b.KWH_2
+,b.KWH_3
+,b.KWH_4
+,b.KWH_5
+,b.KWH_6
+,b.KWH_7
+,b.KWH_8
+,b.KWH_9
+,b.KWH_10
+,b.KWH_11
+,b.KWH_12
+,b.KWH_13
+,b.KWH_14
+,b.KWH_15
+,b.KWH_16
+FROM ammeter_node a
+LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.router_id AND b.ammeter_id = a.ammeter_id 
+WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
+AND b.am_year = '$current_year' AND b.am_month = '$current_month'
+AND a.merge_node <> ''
+ORDER BY a.case_id,a.merge_node,b.am_year,b.am_month,b.am_day,a.node_no
+";
+
+$mDB->query($Qry);
+
+if ($mDB->rowCount() > 0) {
+
+	$merge_node = '';
+
+	while ($row=$mDB->fetchRow(2)) {
+		
+		$o_am_day = $row['am_day'];
+		$o_node_no = $row['node_no'];
+		$o_merge_node = $row['merge_node'];
+
+		if ($o_merge_node <> $merge_node) {
+			$merge_node = $o_merge_node;
+		} 
+
+		if ($o_merge_node == $merge_node) {
+			for ($i = 0; $i <= 30; $i++) {
+				$DAY = $row['am_day'];
+				if ($DAY == $i+1) {
+					$KWH = "KWH_".$o_node_no;
+					$KWH_SUMMARY_TOT += $row[$KWH];
+				}
+			}
+		}
+
+	}
+
+}
+
+$last_am_day = $o_am_day;
+
+$show_analysis = "";
+
+
+//先取得量測節點
+$Qry="SELECT a.merge_node,a.case_id,a.router_id,a.ammeter_id,b.am_year,b.am_month,b.am_day,a.node_no
+,b.KWH_1
+,b.KWH_2
+,b.KWH_3
+,b.KWH_4
+,b.KWH_5
+,b.KWH_6
+,b.KWH_7
+,b.KWH_8
+,b.KWH_9
+,b.KWH_10
+,b.KWH_11
+,b.KWH_12
+,b.KWH_13
+,b.KWH_14
+,b.KWH_15
+,b.KWH_16
+,(SELECT count(*) FROM ammeter_node WHERE case_id = a.case_id AND enabled = 'Y' AND main_meter = 'N'
+AND b.am_year = '$current_year' AND b.am_month = '$current_month'
+AND merge_node = a.merge_node
+GROUP BY case_id,merge_node,am_year,am_month,am_day
+ORDER BY case_id,merge_node,am_year,am_month,am_day,node_no LIMIT 1
+) as icount
+FROM ammeter_node a
+LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.router_id AND b.ammeter_id = a.ammeter_id 
+WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
+AND b.am_year = '$current_year' AND b.am_month = '$current_month'
+AND a.merge_node <> ''
+ORDER BY a.case_id,a.merge_node,b.am_year,b.am_month,b.am_day,a.node_no
+";
+
 $mDB->query($Qry);
 
 $m_KWH_TOT = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
+
 if ($mDB->rowCount() > 0) {
 
-	$seq = 0;
+	$merge_node = '';
+
+	$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+
+	$KWH_SUMMARY = 0;
+	
 	while ($row=$mDB->fetchRow(2)) {
-		$seq++;
 		$case_id = $row['case_id'];
 		$router_id = $row['router_id'];
 		$ammeter_id = $row['ammeter_id'];
-		$node_no = $row['node_no'];
+		$o_am_day = $row['am_day'];
+		$o_node_no = $row['node_no'];
 		$phase = $row['phase'];
 		$description = $row['description'];
-		$orderby = $row['orderby'];
+		$o_merge_node = $row['merge_node'];
+		$icount = $row['icount'];
 
-		//再取得各 node 的用電 KWH 數值
-		$Qry2="SELECT * FROM ammeter_node_kwh_day
-			WHERE case_id = '$case_id' AND router_id = '$router_id' AND ammeter_id = '$ammeter_id'
-			AND am_year = '$current_year' AND am_month = '$current_month'
-			";
-		$mDB2->query($Qry2);
+		if ($o_merge_node <> $merge_node) {
 
-		$KWH_SUMMARY = 0;
-		if ($mDB2->rowCount() > 0) {
+			$merge_node = $o_merge_node;
+			$seq = 0;
+			
+		} 
 
-			$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-			while ($row2=$mDB2->fetchRow(2)) {
-
-				for ($i = 0; $i <= 30; $i++) {
-					$DAY = $row2['am_day'];
-					if ($DAY == $i+1) {
-						$KWH = "KWH_".$node_no;
-						$m_KWH[$i] = $row2[$KWH];
-						$KWH_SUMMARY = $KWH_SUMMARY+$row2[$KWH];	//橫向加總
-						//累計加總
-						$m_KWH_TOT[$i] = $m_KWH_TOT[$i]+$row2[$KWH];
-
-
-					}
+		if ($o_merge_node == $merge_node) {
+			for ($i = 0; $i <= 30; $i++) {
+				$DAY = $row['am_day'];
+				if ($DAY == $i+1) {
+					$KWH = "KWH_".$o_node_no;
+					$m_KWH[$i] += $row[$KWH];
+					$m_KWH_TOT[$i] += $row[$KWH];
 				}
 			}
 		}
 
-		for ($i = 0; $i <= 30; $i++) {
-			$m_KWH[$i] = round($m_KWH[$i],4);
-			$m_KWH_TOT[$i] = round($m_KWH_TOT[$i],4);
+
+		$excelRow = 5; // 從第5列開始
+
+	while ($row=$mDB->fetchRow(2)) {
+		$case_id = $row['case_id'];
+		$router_id = $row['router_id'];
+		$ammeter_id = $row['ammeter_id'];
+		$o_am_day = $row['am_day'];
+		$o_node_no = $row['node_no'];
+		$phase = $row['phase'];
+		$description = $row['description'];
+		$o_merge_node = $row['merge_node'];
+		$icount = $row['icount'];
+
+		if ($o_merge_node <> $merge_node) {
+			$merge_node = $o_merge_node;
+			$seq = 0;
+		} 
+
+		if ($o_merge_node == $merge_node) {
+			for ($i = 0; $i <= 30; $i++) {
+				$DAY = $row['am_day'];
+				if ($DAY == $i+1) {
+					$KWH = "KWH_".$o_node_no;
+					$m_KWH[$i] += $row[$KWH];
+					$m_KWH_TOT[$i] += $row[$KWH];
+				}
+			}
 		}
 
-		$fmt_KWH_SUMMARY = round($KWH_SUMMARY,4);
+		if ($o_am_day >= $last_am_day) {
+			$seq++;
+			if ($seq >= $icount) {
 
-		//計算百分佔比
-		$KWH_SUMMARY_PERCENT = 0;
-		if ($KWH_SUMMARY_TOT <> 0)
-			$KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY/$KWH_SUMMARY_TOT)*100,4);
+				for ($i = 0; $i <= 30; $i++) {
+					$KWH_SUMMARY = $KWH_SUMMARY+$m_KWH[$i];
+					$m_KWH[$i] = number_format2($m_KWH[$i],4);
+				}
+				$fmt_KWH_SUMMARY = number_format2($KWH_SUMMARY,4);
 
-		$fmt_KWH_SUMMARY_TOT = round($KWH_SUMMARY_TOT,4);
+				//計算百分佔比
+				$KWH_SUMMARY_PERCENT = 0;
+				if ($KWH_SUMMARY_TOT <> 0) {
+					$KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY/$KWH_SUMMARY_TOT)*100,1);
+				}
+
+				// 動態列數寫入
+				$objPHPExcel->setActiveSheetIndex(0)
+					->setCellValue("A{$excelRow}", $merge_node);
+
+				for ($i = 0; $i <= 30; $i++) {
+					$col = PHPExcel_Cell::stringFromColumnIndex($i+1); // B 開始
+					$objPHPExcel->getActiveSheet()->setCellValue("{$col}{$excelRow}", $m_KWH[$i]);
+				}
+
+				$objPHPExcel->getActiveSheet()
+					->setCellValue("AG{$excelRow}", $fmt_KWH_SUMMARY)
+					->setCellValue("AH{$excelRow}", $KWH_SUMMARY_PERCENT)
+					->setCellValue("AI{$excelRow}", $case_id)
+					->setCellValue("AJ{$excelRow}", $router_id)
+					->setCellValue("AK{$excelRow}", $ammeter_id)
+					->setCellValue("AL{$excelRow}", $o_am_day)
+					->setCellValue("AM{$excelRow}", $o_node_no)
+					->setCellValue("AN{$excelRow}", $phase)
+					->setCellValue("AO{$excelRow}", $description)
+					->setCellValue("AP{$excelRow}", $icount)
+
+					;
 
 
-		$line++;
+				// reset
+				$m_KWH = array_fill(0, 31, 0);
+				$KWH_SUMMARY = 0;
 
-		$a = 'A'.$line;
-		$b = 'B'.$line;
-		$c = 'C'.$line;
-		$d = 'D'.$line;
-		$e = 'E'.$line;
-		$f = 'F'.$line;
-		$g = 'G'.$line;
-		$h = 'H'.$line;
-		$i = 'I'.$line;
-		$j = 'J'.$line;
-		$k = 'K'.$line;
-		$l = 'L'.$line;
-		$m = 'M'.$line;
-		$n = 'N'.$line;
-		$o = 'O'.$line;
-		$p = 'P'.$line;
-		$q = 'Q'.$line;
-		$r = 'R'.$line;
-		$s = 'S'.$line;
-		$t = 'T'.$line;
-		$u = 'U'.$line;
-		$v = 'V'.$line;
-		$w = 'W'.$line;
-		$x = 'X'.$line;
-		$y = 'Y'.$line;
-		$z = 'Z'.$line;
-		$aa = 'AA'.$line;
-		$ab = 'AB'.$line;
-		$ac = 'AC'.$line;
-		$ad = 'AD'.$line;
-		$ae = 'AE'.$line;
-		$af = 'AF'.$line;
-		$ag = 'AG'.$line;
-		$ah = 'AH'.$line;
-		
-		
-
-		//設置水平置中
-		$objPHPExcel->getActiveSheet()->getStyle($a)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
-		$objPHPExcel->getActiveSheet()->getStyle($b.':'.$ah)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-		
-		//設置垂直置上
-		$objPHPExcel->getActiveSheet()->getStyle($b.':'.$ah)->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-		
-		
-		//設置自動換行
-		//$objPHPExcel->getActiveSheet()->getStyle($a.':'.$t)->getAlignment()->setWrapText(true);
-		
-		
-		$objPHPExcel->setActiveSheetIndex(0)
-					->setCellValue($a, $seq." ".$description)
-					->setCellValue($b, $m_KWH[0])
-					->setCellValue($c, $m_KWH[1])
-					->setCellValue($d, $m_KWH[2])
-					->setCellValue($e, $m_KWH[3])
-					->setCellValue($f, $m_KWH[4])
-					->setCellValue($g, $m_KWH[5])
-					->setCellValue($h, $m_KWH[6])
-					->setCellValue($i, $m_KWH[7])
-					->setCellValue($j, $m_KWH[8])
-					->setCellValue($k, $m_KWH[9])
-					->setCellValue($l, $m_KWH[10])
-					->setCellValue($m, $m_KWH[11])
-					->setCellValue($n, $m_KWH[12])
-					->setCellValue($o, $m_KWH[13])
-					->setCellValue($p, $m_KWH[14])
-					->setCellValue($q, $m_KWH[15])
-					->setCellValue($r, $m_KWH[16])
-					->setCellValue($s, $m_KWH[17])
-					->setCellValue($t, $m_KWH[18])
-					->setCellValue($u, $m_KWH[19])
-					->setCellValue($v, $m_KWH[20])
-					->setCellValue($w, $m_KWH[21])
-					->setCellValue($x, $m_KWH[22])
-					->setCellValue($y, $m_KWH[23])
-					->setCellValue($z, $m_KWH[24])
-					->setCellValue($aa, $m_KWH[25])
-					->setCellValue($ab, $m_KWH[26])
-					->setCellValue($ac, $m_KWH[27])
-					->setCellValue($ad, $m_KWH[28])
-					->setCellValue($ae, $m_KWH[29])
-					->setCellValue($af, $m_KWH[30])
-					->setCellValue($ag, $fmt_KWH_SUMMARY)
-					->setCellValue($ah, $KWH_SUMMARY_PERCENT)
-					;				
-
-		//設置邊框線及顏色
-		$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
-		$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getBorders()->getAllBorders()->getColor()->setRGB('000000');
-		
-
-		
-		
-
+				// 下一列
+				$excelRow++;
+			}
+		}
 	}
 
-
-	$line++;
-
-	$a = 'A'.$line;
-	$b = 'B'.$line;
-	$c = 'C'.$line;
-	$d = 'D'.$line;
-	$e = 'E'.$line;
-	$f = 'F'.$line;
-	$g = 'G'.$line;
-	$h = 'H'.$line;
-	$i = 'I'.$line;
-	$j = 'J'.$line;
-	$k = 'K'.$line;
-	$l = 'L'.$line;
-	$m = 'M'.$line;
-	$n = 'N'.$line;
-	$o = 'O'.$line;
-	$p = 'P'.$line;
-	$q = 'Q'.$line;
-	$r = 'R'.$line;
-	$s = 'S'.$line;
-	$t = 'T'.$line;
-	$u = 'U'.$line;
-	$v = 'V'.$line;
-	$w = 'W'.$line;
-	$x = 'X'.$line;
-	$y = 'Y'.$line;
-	$z = 'Z'.$line;
-	$aa = 'AA'.$line;
-	$ab = 'AB'.$line;
-	$ac = 'AC'.$line;
-	$ad = 'AD'.$line;
-	$ae = 'AE'.$line;
-	$af = 'AF'.$line;
-	$ag = 'AG'.$line;
-	$ah = 'AH'.$line;
-
-	$objPHPExcel->setActiveSheetIndex(0)
-				->setCellValue($a, '全部總和')
-				->setCellValue($b, $m_KWH_TOT[0])
-				->setCellValue($c, $m_KWH_TOT[1])
-				->setCellValue($d, $m_KWH_TOT[2])
-				->setCellValue($e, $m_KWH_TOT[3])
-				->setCellValue($f, $m_KWH_TOT[4])
-				->setCellValue($g, $m_KWH_TOT[5])
-				->setCellValue($h, $m_KWH_TOT[6])
-				->setCellValue($i, $m_KWH_TOT[7])
-				->setCellValue($j, $m_KWH_TOT[8])
-				->setCellValue($k, $m_KWH_TOT[9])
-				->setCellValue($l, $m_KWH_TOT[10])
-				->setCellValue($m, $m_KWH_TOT[11])
-				->setCellValue($n, $m_KWH_TOT[12])
-				->setCellValue($o, $m_KWH_TOT[13])
-				->setCellValue($p, $m_KWH_TOT[14])
-				->setCellValue($q, $m_KWH_TOT[15])
-				->setCellValue($r, $m_KWH_TOT[16])
-				->setCellValue($s, $m_KWH_TOT[17])
-				->setCellValue($t, $m_KWH_TOT[18])
-				->setCellValue($u, $m_KWH_TOT[19])
-				->setCellValue($v, $m_KWH_TOT[20])
-				->setCellValue($w, $m_KWH_TOT[21])
-				->setCellValue($x, $m_KWH_TOT[22])
-				->setCellValue($y, $m_KWH_TOT[23])
-				->setCellValue($z, $m_KWH_TOT[24])
-				->setCellValue($aa, $m_KWH_TOT[25])
-				->setCellValue($ab, $m_KWH_TOT[26])
-				->setCellValue($ac, $m_KWH_TOT[27])
-				->setCellValue($ad, $m_KWH_TOT[28])
-				->setCellValue($ae, $m_KWH_TOT[29])
-				->setCellValue($af, $m_KWH_TOT[30])
-				->setCellValue($ag, $fmt_KWH_SUMMARY_TOT)
-				->setCellValue($ah, '100')
-				;				
-
-	//設置底色
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getFill()->getStartColor()->setRGB('FFDC00');
-
-	//設置邊框線及顏色			
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getBorders()->getAllBorders()->getColor()->setRGB('000000');
-
-	//設置水平置中
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-	
-	//設置垂直置上
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$ah)->getFont()->setBold(true);			
-
-	$objPHPExcel->getActiveSheet()->getRowDimension($line)->setRowHeight(30);
-
+	}
 	
 }
 
