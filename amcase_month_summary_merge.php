@@ -134,7 +134,7 @@ LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.ro
 WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
 AND b.am_year = '$current_year' AND b.am_month = '$current_month'
 AND a.merge_node <> ''
-ORDER BY a.case_id,a.merge_node,b.am_year,b.am_month,b.am_day,a.node_no
+ORDER BY a.orderby
 ";
 
 $mDB->query($Qry);
@@ -208,7 +208,7 @@ LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.ro
 WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
 AND b.am_year = '$current_year' AND b.am_month = '$current_month'
 AND a.merge_node <> ''
-ORDER BY a.case_id,a.merge_node,b.am_year,b.am_month,b.am_day,a.node_no
+ORDER BY a.orderby
 ";
 
 $mDB->query($Qry);
@@ -267,6 +267,8 @@ EOT;
 
 	$KWH_SUMMARY = 0;
 
+	$seq_no = 0;
+
 	while ($row=$mDB->fetchRow(2)) {
 		$case_id = $row['case_id'];
 		$router_id = $row['router_id'];
@@ -301,6 +303,7 @@ EOT;
 			$seq++;
 			
 			if ($seq >= $icount) {
+				$seq_no++;
 
 				for ($i = 0; $i <= 30; $i++) {
 					$KWH_SUMMARY = $KWH_SUMMARY+$m_KWH[$i];
@@ -316,7 +319,7 @@ EOT;
 
 $show_analysis.=<<<EOT
 			<tr class="text-center">
-			<th scope="row" class="text-center">$merge_node</th>
+			<th scope="row" class="text-left text-nowrap">({$seq_no}). {$merge_node}</th>
 				<td>$m_KWH[0]</td>
 				<td>$m_KWH[1]</td>
 				<td>$m_KWH[2]</td>

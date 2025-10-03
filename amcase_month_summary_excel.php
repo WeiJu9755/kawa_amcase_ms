@@ -186,7 +186,41 @@ $objPHPExcel->getActiveSheet()->getStyle('A4:AH4')->getAlignment()->setHorizonta
 $objPHPExcel->getActiveSheet()->getStyle('A4:AH4')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
 
 //設置欄位寬度
-$objPHPExcel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+//設置欄位寬度
+$objPHPExcel->getActiveSheet()->getColumnDimension('A')->setWidth(40);
+$objPHPExcel->getActiveSheet()->getColumnDimension('B')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('C')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('D')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('E')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('F')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('G')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('H')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('I')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('J')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('K')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('L')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('M')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('N')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('O')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('P')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('Q')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('R')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('S')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('T')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('U')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('V')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('W')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('X')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('Y')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('Z')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AA')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AB')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AC')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AD')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AE')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AF')->setWidth(8);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AG')->setWidth(14);
+$objPHPExcel->getActiveSheet()->getColumnDimension('AH')->setWidth(14);
 /*
 //$objPHPExcel->getActiveSheet()->getColumnDimension('A')->setAutoSize(true);
 $objPHPExcel->getActiveSheet()->getColumnDimension('A')->setWidth(8);
@@ -285,7 +319,7 @@ LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.ro
 WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
 AND b.am_year = '$current_year' AND b.am_month = '$current_month'
 AND a.merge_node <> ''
-ORDER BY a.case_id,a.merge_node,b.am_year,b.am_month,b.am_day,a.node_no
+ORDER BY a.orderby
 ";
 
 $mDB->query($Qry);
@@ -352,7 +386,7 @@ LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.ro
 WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
 AND b.am_year = '$current_year' AND b.am_month = '$current_month'
 AND a.merge_node <> ''
-ORDER BY a.case_id,a.merge_node,b.am_year,b.am_month,b.am_day,a.node_no
+ORDER BY a.orderby
 ";
 
 $mDB->query($Qry);
@@ -367,6 +401,8 @@ if ($mDB->rowCount() > 0) {
 	$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
 	$KWH_SUMMARY = 0;
+
+	$seq_no = 0;
 	
 	while ($row=$mDB->fetchRow(2)) {
 		$case_id = $row['case_id'];
@@ -429,8 +465,9 @@ if ($mDB->rowCount() > 0) {
 
 		if ($o_am_day >= $last_am_day) {
 			$seq++;
-			if ($seq >= $icount) {
 
+			if ($seq >= $icount) {
+				$seq_no++;
 				for ($i = 0; $i <= 30; $i++) {
 					$KWH_SUMMARY = $KWH_SUMMARY+$m_KWH[$i];
 					$m_KWH[$i] = number_format2($m_KWH[$i],4);
@@ -445,26 +482,61 @@ if ($mDB->rowCount() > 0) {
 
 				// 動態列數寫入
 				$objPHPExcel->setActiveSheetIndex(0)
-					->setCellValue("A{$excelRow}", $merge_node);
+					->setCellValue("A{$excelRow}", '(' . $seq_no . ')' . $merge_node);
 
 				for ($i = 0; $i <= 30; $i++) {
 					$col = PHPExcel_Cell::stringFromColumnIndex($i+1); // B 開始
 					$objPHPExcel->getActiveSheet()->setCellValue("{$col}{$excelRow}", $m_KWH[$i]);
+					if($m_KWH[$i] > 0){
+						$objPHPExcel->getActiveSheet()->getColumnDimension($col)->setWidth(14);
+					}
 				}
 
 				$objPHPExcel->getActiveSheet()
 					->setCellValue("AG{$excelRow}", $fmt_KWH_SUMMARY)
 					->setCellValue("AH{$excelRow}", $KWH_SUMMARY_PERCENT)
-					->setCellValue("AI{$excelRow}", $case_id)
-					->setCellValue("AJ{$excelRow}", $router_id)
-					->setCellValue("AK{$excelRow}", $ammeter_id)
-					->setCellValue("AL{$excelRow}", $o_am_day)
-					->setCellValue("AM{$excelRow}", $o_node_no)
-					->setCellValue("AN{$excelRow}", $phase)
-					->setCellValue("AO{$excelRow}", $description)
-					->setCellValue("AP{$excelRow}", $icount)
+					
 
 					;
+				// 設定樣式：A欄靠左 + 字型大小 12 + 邊框
+				$objPHPExcel->getActiveSheet()
+						->getStyle("A{$excelRow}") // 範圍 A 到 AH
+						->applyFromArray([
+							'alignment' => [
+								'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
+								'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+							],
+							'font' => [
+								'size' => 12,
+							],
+							'borders' => [
+								'allborders' => [
+									'style' => PHPExcel_Style_Border::BORDER_THIN,
+									'color' => ['rgb' => '000000']
+								]
+							]
+						]);
+				// 設定樣式：置中 + 字型大小 12 + 邊框
+					$objPHPExcel->getActiveSheet()
+						->getStyle("B{$excelRow}:AH{$excelRow}") // 範圍 A 到 AH
+						->applyFromArray([
+							'alignment' => [
+								'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+								'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+							],
+							'font' => [
+								'size' => 12,
+							],
+							'borders' => [
+								'allborders' => [
+									'style' => PHPExcel_Style_Border::BORDER_THIN,
+									'color' => ['rgb' => '000000']
+								]
+							]
+						]);
+
+					// 設定列高 25
+					$objPHPExcel->getActiveSheet()->getRowDimension($excelRow)->setRowHeight(25);
 
 
 				// reset
