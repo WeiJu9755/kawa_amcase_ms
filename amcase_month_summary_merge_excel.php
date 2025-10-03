@@ -262,36 +262,6 @@ if (!isset($_GET['current_month']))
 
 $m_period = $current_year."年".$current_month."月";
 
-//取得年月份
-$Qry="SELECT am_year,am_month FROM ammeter_node_kwh_day
-WHERE case_id = '$case_id' 
-GROUP BY case_id,am_year,am_month ORDER BY case_id,am_year DESC,am_month DESC";
-
-$mDB->query($Qry);
-$m_year  = "";
-if ($mDB->rowCount() > 0) {
-	$m_year  = "<select class=\"inline form-control\" name=\"period_list\" id=\"period_list\" style=\"width:auto;\">";
-	$n = 0;
-	while ($row=$mDB->fetchRow(2)) {
-	
-		$o_current_year = $row['am_year'];
-		$o_current_month = $row['am_month'];
-		$o_period = $o_current_year."年".$o_current_month."月";
-		
-		$m_year .=  "<option value='/index.php?ch=$ch&case_id=$case_id&current_year=".$o_current_year."&current_month=".$o_current_month."&fm=$fm' ".mySelect($o_period,$m_period).">$o_period</option>";
-		
-		$n++;
-		if ($n == 1) {
-			if (!isset($_GET['current_year'])) {
-				$current_year = $o_current_year;
-				$current_month = $o_current_month;
-				$m_period = $current_year."年".$current_month."月";
-			}
-		}
-		
-	}
-	$m_year .= "</select>";
-}
 
 //先取得量測節點總和
 $KWH_SUMMARY_TOT = 0;		//全部總和
@@ -396,161 +366,179 @@ $m_KWH_TOT = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 if ($mDB->rowCount() > 0) {
 
-	$merge_node = '';
+    $merge_node = '';
 
-	$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+    // 初始化 31 天 (index 0..30)
+    $m_KWH = array_fill(0, 31, 0.0);
+    $m_KWH_TOT = array_fill(0, 31, 0.0);
 
-	$KWH_SUMMARY = 0;
+    $KWH_SUMMARY = 0.0;
+    $KWH_SUMMARY_TOT = isset($KWH_SUMMARY_TOT) ? $KWH_SUMMARY_TOT : 0.0; // 若外部沒給值則預設 0
+    $seq_no = 0;
+    $seq = 0;
 
-	$seq_no = 0;
-	
-	while ($row=$mDB->fetchRow(2)) {
-		$case_id = $row['case_id'];
-		$router_id = $row['router_id'];
-		$ammeter_id = $row['ammeter_id'];
-		$o_am_day = $row['am_day'];
-		$o_node_no = $row['node_no'];
-		$phase = $row['phase'];
-		$description = $row['description'];
-		$o_merge_node = $row['merge_node'];
-		$icount = $row['icount'];
+    $excelRow = 5; // 從第5列開始（放到迴圈外初始化）
 
-		if ($o_merge_node <> $merge_node) {
+    // 確保 $last_am_day 已存在（視業務邏輯可能要設定預設）
+    if (!isset($last_am_day)) {
+        $last_am_day = 0;
+    }
 
-			$merge_node = $o_merge_node;
-			$seq = 0;
-			
-		} 
+    while ($row = $mDB->fetchRow(2)) {
+        $case_id = $row['case_id'];
+        $router_id = $row['router_id'];
+        $ammeter_id = $row['ammeter_id'];
+        $o_am_day = (int)$row['am_day'];
+        $o_node_no = $row['node_no'];
+        $phase = $row['phase'];
+        $description = $row['description'];
+        $o_merge_node = $row['merge_node'];
+        $icount = isset($row['icount']) ? (int)$row['icount'] : 1;
 
-		if ($o_merge_node == $merge_node) {
-			for ($i = 0; $i <= 30; $i++) {
-				$DAY = $row['am_day'];
-				if ($DAY == $i+1) {
-					$KWH = "KWH_".$o_node_no;
-					$m_KWH[$i] += $row[$KWH];
-					$m_KWH_TOT[$i] += $row[$KWH];
-				}
-			}
-		}
+        // merge_node 變更時重置 seq
+        if ($o_merge_node !== $merge_node) {
+            $merge_node = $o_merge_node;
+            $seq = 0;
+        }
 
+        // 累計當天 KWH（注意 o_am_day 從 1..31，陣列 index 0 對應 day1）
+        if ($o_am_day >= 1 && $o_am_day <= 31) {
+            $idx = $o_am_day - 1; // 對應陣列索引
+            $KWH_field = "KWH_" . $o_node_no;
+            $value = isset($row[$KWH_field]) ? (float)$row[$KWH_field] : 0.0;
+            $m_KWH[$idx] += $value;
+            $m_KWH_TOT[$idx] += $value;
+        }
 
-		$excelRow = 5; // 從第5列開始
+        // 判斷列輸出條件
+        if ($o_am_day >= $last_am_day) {
+            $seq++;
 
-	while ($row=$mDB->fetchRow(2)) {
-		$case_id = $row['case_id'];
-		$router_id = $row['router_id'];
-		$ammeter_id = $row['ammeter_id'];
-		$o_am_day = $row['am_day'];
-		$o_node_no = $row['node_no'];
-		$phase = $row['phase'];
-		$description = $row['description'];
-		$o_merge_node = $row['merge_node'];
-		$icount = $row['icount'];
+            if ($seq >= $icount) {
+                $seq_no++;
 
-		if ($o_merge_node <> $merge_node) {
-			$merge_node = $o_merge_node;
-			$seq = 0;
-		} 
+                // 計算當列總和（使用數值）
+                $KWH_SUMMARY = 0.0;
+                for ($i = 0; $i <= 30; $i++) {
+                    $KWH_SUMMARY += $m_KWH[$i];
+                }
 
-		if ($o_merge_node == $merge_node) {
-			for ($i = 0; $i <= 30; $i++) {
-				$DAY = $row['am_day'];
-				if ($DAY == $i+1) {
-					$KWH = "KWH_".$o_node_no;
-					$m_KWH[$i] += $row[$KWH];
-					$m_KWH_TOT[$i] += $row[$KWH];
-				}
-			}
-		}
+                $fmt_KWH_SUMMARY = number_format2($KWH_SUMMARY, 4); // 格式化僅供輸出
 
-		if ($o_am_day >= $last_am_day) {
-			$seq++;
+                // 計算百分比（避免除以 0）
+                $KWH_SUMMARY_PERCENT = 0.0;
+                if ($KWH_SUMMARY_TOT != 0.0) {
+                    $KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY / $KWH_SUMMARY_TOT) * 100, 1);
+                }
 
-			if ($seq >= $icount) {
-				$seq_no++;
-				for ($i = 0; $i <= 30; $i++) {
-					$KWH_SUMMARY = $KWH_SUMMARY+$m_KWH[$i];
-					$m_KWH[$i] = number_format2($m_KWH[$i],4);
-				}
-				$fmt_KWH_SUMMARY = number_format2($KWH_SUMMARY,4);
+                // 動態列數寫入
+                $objPHPExcel->setActiveSheetIndex(0)
+                    ->setCellValue("A{$excelRow}", '(' . $seq_no . ')' . $merge_node);
 
-				//計算百分佔比
-				$KWH_SUMMARY_PERCENT = 0;
-				if ($KWH_SUMMARY_TOT <> 0) {
-					$KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY/$KWH_SUMMARY_TOT)*100,1);
-				}
+                for ($i = 0; $i <= 30; $i++) {
+                    $col = PHPExcel_Cell::stringFromColumnIndex($i + 1); // B 開始
+                    $fmtValue = number_format2($m_KWH[$i], 4);
+                    $objPHPExcel->getActiveSheet()->setCellValue("{$col}{$excelRow}", $fmtValue);
+                    if ($m_KWH[$i] > 0) {
+                        $objPHPExcel->getActiveSheet()->getColumnDimension($col)->setWidth(14);
+                    }
+                }
 
-				// 動態列數寫入
-				$objPHPExcel->setActiveSheetIndex(0)
-					->setCellValue("A{$excelRow}", '(' . $seq_no . ')' . $merge_node);
+                $objPHPExcel->getActiveSheet()
+                    ->setCellValue("AG{$excelRow}", $fmt_KWH_SUMMARY)
+                    ->setCellValue("AH{$excelRow}", $KWH_SUMMARY_PERCENT);
 
-				for ($i = 0; $i <= 30; $i++) {
-					$col = PHPExcel_Cell::stringFromColumnIndex($i+1); // B 開始
-					$objPHPExcel->getActiveSheet()->setCellValue("{$col}{$excelRow}", $m_KWH[$i]);
-					if($m_KWH[$i] > 0){
-						$objPHPExcel->getActiveSheet()->getColumnDimension($col)->setWidth(14);
-					}
-				}
+                // 設定樣式：A欄靠左 + 字型大小 12 + 邊框
+                $objPHPExcel->getActiveSheet()
+                    ->getStyle("A{$excelRow}")
+                    ->applyFromArray([
+                        'alignment' => [
+                            'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
+                            'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+                        ],
+                        'font' => [
+                            'size' => 12,
+                        ],
+                        'borders' => [
+                            'allborders' => [
+                                'style' => PHPExcel_Style_Border::BORDER_THIN,
+                                'color' => ['rgb' => '000000']
+                            ]
+                        ]
+                    ]);
 
-				$objPHPExcel->getActiveSheet()
-					->setCellValue("AG{$excelRow}", $fmt_KWH_SUMMARY)
-					->setCellValue("AH{$excelRow}", $KWH_SUMMARY_PERCENT)
-					
+                // 設定樣式：置中 + 字型大小 12 + 邊框
+                $objPHPExcel->getActiveSheet()
+                    ->getStyle("B{$excelRow}:AH{$excelRow}")
+                    ->applyFromArray([
+                        'alignment' => [
+                            'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                            'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+                        ],
+                        'font' => [
+                            'size' => 12,
+                        ],
+                        'borders' => [
+                            'allborders' => [
+                                'style' => PHPExcel_Style_Border::BORDER_THIN,
+                                'color' => ['rgb' => '000000']
+                            ]
+                        ]
+                    ]);
 
-					;
-				// 設定樣式：A欄靠左 + 字型大小 12 + 邊框
-				$objPHPExcel->getActiveSheet()
-						->getStyle("A{$excelRow}") // 範圍 A 到 AH
-						->applyFromArray([
-							'alignment' => [
-								'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
-								'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
-							],
-							'font' => [
-								'size' => 12,
-							],
-							'borders' => [
-								'allborders' => [
-									'style' => PHPExcel_Style_Border::BORDER_THIN,
-									'color' => ['rgb' => '000000']
-								]
-							]
-						]);
-				// 設定樣式：置中 + 字型大小 12 + 邊框
-					$objPHPExcel->getActiveSheet()
-						->getStyle("B{$excelRow}:AH{$excelRow}") // 範圍 A 到 AH
-						->applyFromArray([
-							'alignment' => [
-								'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
-								'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
-							],
-							'font' => [
-								'size' => 12,
-							],
-							'borders' => [
-								'allborders' => [
-									'style' => PHPExcel_Style_Border::BORDER_THIN,
-									'color' => ['rgb' => '000000']
-								]
-							]
-						]);
+                // 設定列高 25
+                $objPHPExcel->getActiveSheet()->getRowDimension($excelRow)->setRowHeight(25);
 
-					// 設定列高 25
-					$objPHPExcel->getActiveSheet()->getRowDimension($excelRow)->setRowHeight(25);
+                // reset
+                $m_KWH = array_fill(0, 31, 0.0);
+                $KWH_SUMMARY = 0.0;
 
+                // 下一列
+                $excelRow++;
+            }
+        }
+    } // end while
 
-				// reset
-				$m_KWH = array_fill(0, 31, 0);
-				$KWH_SUMMARY = 0;
+    // ===== 所有資料處理完後，新增最後一列 (總合) 放在 if 內 =====
+    $fmt_KWH_SUMMARY_TOT = number_format2($KWH_SUMMARY_TOT, 4);
+    $objPHPExcel->setActiveSheetIndex(0)
+        ->setCellValue("A{$excelRow}", "全部總和");
 
-				// 下一列
-				$excelRow++;
-			}
-		}
-	}
+    // B..AF 共 31 欄（使用迴圈填入）
+    $cols = array_merge(range('B', 'Z'), ['AA','AB','AC','AD','AE','AF']);
+    for ($i = 0; $i <= 30; $i++) {
+        $col = $cols[$i];
+        $objPHPExcel->getActiveSheet()->setCellValue("{$col}{$excelRow}", number_format2($m_KWH_TOT[$i], 4));
+    }
+    $objPHPExcel->getActiveSheet()->setCellValue("AG{$excelRow}", $fmt_KWH_SUMMARY_TOT);
+    $objPHPExcel->getActiveSheet()->setCellValue("AH{$excelRow}", 100);
 
-	}
-	
+    // 設定樣式：A 到 AH 欄，字體粗體 + 字型大小 12 + 黃底 (FFDC00) + 邊框
+    $objPHPExcel->getActiveSheet()
+        ->getStyle("A{$excelRow}:AH{$excelRow}")
+        ->applyFromArray([
+            'alignment' => [
+                'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                'vertical'   => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+            ],
+            'font' => [
+                'size' => 12,
+                'bold' => true,
+            ],
+            'borders' => [
+                'allborders' => [
+                    'style' => PHPExcel_Style_Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000']
+                ]
+            ],
+            'fill' => [
+                'type'  => PHPExcel_Style_Fill::FILL_SOLID,
+                'color' => ['rgb' => 'FFDC00']
+            ]
+        ]);
+
+    $objPHPExcel->getActiveSheet()->getRowDimension($excelRow)->setRowHeight(35);
+
 }
 
 $mDB2->remove();

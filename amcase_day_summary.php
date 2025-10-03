@@ -53,16 +53,21 @@ $fm = $_GET['fm'];
 $ch = $_GET['ch'];
 $case_id = $_GET['case_id'];
 
-$current_year = $_GET['current_year'];
-if (!isset($_GET['current_year']))
-	$current_year = date('Y');
+$current_date = $_GET['current_date'];
+if (!isset($_GET['current_date']))
+	$current_date = date('Y-m-d');
 
-$current_month = $_GET['current_month'];
-if (!isset($_GET['current_month']))
-	$current_month = date('m');
 
-$m_period = $current_year."年".$current_month."月";
 
+$report_date = $current_date;
+	
+$am_year = date('Y', strtotime($current_date));
+$am_month = date('m', strtotime($current_date));
+$am_day = date('d', strtotime($current_date));
+$am_hour = date('H', strtotime($current_date));
+$am_minutes = date('i', strtotime($current_date));
+//$am_second = date('s', strtotime($current_date));
+	
 
 
 $mDB = "";
@@ -72,105 +77,43 @@ $mDB2 = "";
 $mDB2 = new MywebDB();
 
 
-//取得年月份
-$Qry="SELECT am_year,am_month FROM ammeter_node_kwh_day
-WHERE case_id = '$case_id' 
-GROUP BY case_id,am_year,am_month ORDER BY case_id,am_year DESC,am_month DESC";
-
+//先取得總和
+//先取得量測節點
+$Qry="SELECT case_id,router_id,ammeter_id,node_no FROM ammeter_node
+WHERE case_id = '$case_id' AND `enabled` = 'Y' AND main_meter = 'N'
+ORDER BY orderby";
 $mDB->query($Qry);
-$m_year  = "";
-if ($mDB->rowCount() > 0) {
-	$m_year  = "<select class=\"inline form-control\" name=\"period_list\" id=\"period_list\" style=\"width:auto;\">";
-	$n = 0;
-	while ($row=$mDB->fetchRow(2)) {
-	
-		$o_current_year = $row['am_year'];
-		$o_current_month = $row['am_month'];
-		$o_period = $o_current_year."年".$o_current_month."月";
-		
-		$m_year .=  "<option value='/index.php?ch=$ch&case_id=$case_id&current_year=".$o_current_year."&current_month=".$o_current_month."&fm=$fm' ".mySelect($o_period,$m_period).">$o_period</option>";
-		
-		$n++;
-		if ($n == 1) {
-			if (!isset($_GET['current_year'])) {
-				$current_year = $o_current_year;
-				$current_month = $o_current_month;
-				$m_period = $current_year."年".$current_month."月";
-			}
-		}
-		
-	}
-	$m_year .= "</select>";
-}
 
-
-
-
-
-//先取得量測節點總和
 $KWH_SUMMARY_TOT = 0;		//全部總和
 
-
-//先取得量測節點
-$Qry="SELECT a.merge_node,a.case_id,a.router_id,a.ammeter_id,b.am_year,b.am_month,b.am_day,a.node_no
-,b.KWH_1
-,b.KWH_2
-,b.KWH_3
-,b.KWH_4
-,b.KWH_5
-,b.KWH_6
-,b.KWH_7
-,b.KWH_8
-,b.KWH_9
-,b.KWH_10
-,b.KWH_11
-,b.KWH_12
-,b.KWH_13
-,b.KWH_14
-,b.KWH_15
-,b.KWH_16
-FROM ammeter_node a
-LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.router_id AND b.ammeter_id = a.ammeter_id 
-WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
-AND b.am_year = '$current_year' AND b.am_month = '$current_month'
-AND a.merge_node <> ''
-ORDER BY a.orderby
-";
-
-$mDB->query($Qry);
-
 if ($mDB->rowCount() > 0) {
-
-	$merge_node = '';
-
 	while ($row=$mDB->fetchRow(2)) {
-		
-		$o_am_day = $row['am_day'];
-		$o_node_no = $row['node_no'];
-		$o_merge_node = $row['merge_node'];
+		$case_id = $row['case_id'];
+		$router_id = $row['router_id'];
+		$ammeter_id = $row['ammeter_id'];
+		$node_no = $row['node_no'];
 
-		if ($o_merge_node <> $merge_node) {
-			$merge_node = $o_merge_node;
-		} 
+		$Qry2="SELECT * FROM ammeter_node_kwh_hour
+			WHERE case_id = '$case_id' AND router_id = '$router_id' AND ammeter_id = '$ammeter_id'
+			AND am_year = '$am_year' AND am_month = '$am_month' AND am_day = '$am_day'
+			";
+		$mDB2->query($Qry2);
+		if ($mDB2->rowCount() > 0) {
+			while ($row2=$mDB2->fetchRow(2)) {
 
-		if ($o_merge_node == $merge_node) {
-			for ($i = 0; $i <= 30; $i++) {
-				$DAY = $row['am_day'];
-				if ($DAY == $i+1) {
-					$KWH = "KWH_".$o_node_no;
-					$KWH_SUMMARY_TOT += $row[$KWH];
+				for ($i = 0; $i <= 23; $i++) {
+					$HOUR = $row2['am_hour'];
+					if ($HOUR == $i) {
+						$KWH = "KWH_".$node_no;
+						//累計總和
+						$KWH_SUMMARY_TOT = $KWH_SUMMARY_TOT+$row2[$KWH];
+					}
 				}
+
 			}
 		}
-
 	}
-
 }
-
-$last_am_day = $o_am_day;
-
-
-
 
 //echo "KWH_SUMMARY_TOT:".$KWH_SUMMARY_TOT."<br>";
 //exit;
@@ -180,40 +123,12 @@ $show_analysis = "";
 
 
 //先取得量測節點
-$Qry="SELECT a.merge_node,a.case_id,a.router_id,a.ammeter_id,b.am_year,b.am_month,b.am_day,a.node_no
-,b.KWH_1
-,b.KWH_2
-,b.KWH_3
-,b.KWH_4
-,b.KWH_5
-,b.KWH_6
-,b.KWH_7
-,b.KWH_8
-,b.KWH_9
-,b.KWH_10
-,b.KWH_11
-,b.KWH_12
-,b.KWH_13
-,b.KWH_14
-,b.KWH_15
-,b.KWH_16
-,(SELECT count(*) FROM ammeter_node WHERE case_id = a.case_id AND enabled = 'Y' AND main_meter = 'N'
-AND b.am_year = '$current_year' AND b.am_month = '$current_month'
-AND merge_node = a.merge_node
-GROUP BY case_id,merge_node,am_year,am_month,am_day
-ORDER BY case_id,merge_node,am_year,am_month,am_day,node_no LIMIT 1
-) as icount
-FROM ammeter_node a
-LEFT JOIN ammeter_node_kwh_day b ON b.case_id = a.case_id AND b.router_id = a.router_id AND b.ammeter_id = a.ammeter_id 
-WHERE a.case_id = '$case_id' AND a.enabled = 'Y' AND a.main_meter = 'N'
-AND b.am_year = '$current_year' AND b.am_month = '$current_month'
-AND a.merge_node <> ''
-ORDER BY a.orderby
-";
-
+$Qry="SELECT * FROM ammeter_node
+WHERE case_id = '$case_id' AND `enabled` = 'Y' AND main_meter = 'N'
+ORDER BY orderby";
 $mDB->query($Qry);
 
-$m_KWH_TOT = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+$m_KWH_TOT = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
 if ($mDB->rowCount() > 0) {
 
@@ -222,38 +137,31 @@ $show_analysis.=<<<EOT
 	<table class="table table-bordered">
 		<thead>
 			<tr class="text-center">
-				<th scope="col" class="size14 bg-aqua text-nowrap weight" style="padding: 10px 0;width:120px;">合併節點</th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>1日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>2日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>3日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>4日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>5日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>6日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>7日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>8日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>9日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>10日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>11日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>12日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>13日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>14日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>15日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>16日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>17日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>18日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>19日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>20日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>21日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>22日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>23日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>24日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>25日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>26日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>27日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>28日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>29日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>30日</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>31日</b></th>
+				<th scope="col" class="size14 bg-aqua text-nowrap" style="padding: 10px 0;width:120px;"><b>設備名稱/小時</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>0</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>1</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>2</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>3</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>4</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>5</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>6</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>7</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>8</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>9</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>10</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>11</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>12</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>13</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>14</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>15</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>16</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>17</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>18</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>19</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>20</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>21</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>22</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:30px;"><b>23</b></th>
 				<th scope="col" class="size14 bg-yellow" style="padding: 10px 0;width:60px;"><b>合計</b></th>
 				<th scope="col" class="size14 bg-yellow" style="padding: 10px 0;width:50px;"><b>佔比%</b></th>
 			</tr>
@@ -261,65 +169,60 @@ $show_analysis.=<<<EOT
 		<tbody>
 EOT;
 
-	$merge_node = '';
-
-	$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-
-	$KWH_SUMMARY = 0;
-
-	$seq_no = 0;
-
+	$seq = 0;
 	while ($row=$mDB->fetchRow(2)) {
+		$seq++;
 		$case_id = $row['case_id'];
 		$router_id = $row['router_id'];
 		$ammeter_id = $row['ammeter_id'];
-		$o_am_day = $row['am_day'];
-		$o_node_no = $row['node_no'];
+		$node_no = $row['node_no'];
 		$phase = $row['phase'];
 		$description = $row['description'];
-		$o_merge_node = $row['merge_node'];
-		$icount = $row['icount'];
 
-		if ($o_merge_node <> $merge_node) {
+		//再取得各 node 的用電 KWH 數值
+		$Qry2="SELECT * FROM ammeter_node_kwh_hour
+			WHERE case_id = '$case_id' AND router_id = '$router_id' AND ammeter_id = '$ammeter_id'
+			AND am_year = '$am_year' AND am_month = '$am_month' AND am_day = '$am_day'
+			";
+		$mDB2->query($Qry2);
+		$KWH_SUMMARY = 0;
+		if ($mDB2->rowCount() > 0) {
 
-			$merge_node = $o_merge_node;
-			$seq = 0;
-			
-		} 
+			$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+			while ($row2=$mDB2->fetchRow(2)) {
 
-		if ($o_merge_node == $merge_node) {
-			for ($i = 0; $i <= 30; $i++) {
-				$DAY = $row['am_day'];
-				if ($DAY == $i+1) {
-					$KWH = "KWH_".$o_node_no;
-					$m_KWH[$i] += $row[$KWH];
-					$m_KWH_TOT[$i] += $row[$KWH];
+				for ($i = 0; $i <= 23; $i++) {
+					$HOUR = $row2['am_hour'];
+					if ($HOUR == $i) {
+						$KWH = "KWH_".$node_no;
+						$m_KWH[$i] = $row2[$KWH];
+						$KWH_SUMMARY = $KWH_SUMMARY+$row2[$KWH];	//橫向加總
+						//累計加總
+						$m_KWH_TOT[$i] = $m_KWH_TOT[$i]+$row2[$KWH];
+
+
+					}
 				}
 			}
 		}
 
+		for ($i = 0; $i <= 23; $i++) {
+			$m_KWH[$i] = number_format2($m_KWH[$i],4);
+			$m_KWH_TOT[$i] = number_format2($m_KWH_TOT[$i],4);
+		}
 
-		if ($o_am_day >= $last_am_day) {
-			$seq++;
-			
-			if ($seq >= $icount) {
-				$seq_no++;
+		$fmt_KWH_SUMMARY = number_format2($KWH_SUMMARY,4);
 
-				for ($i = 0; $i <= 30; $i++) {
-					$KWH_SUMMARY = $KWH_SUMMARY+$m_KWH[$i];
-					$m_KWH[$i] = number_format2($m_KWH[$i],4);
-				}
-				$fmt_KWH_SUMMARY = number_format2($KWH_SUMMARY,4);
+		//計算百分佔比
+		$KWH_SUMMARY_PERCENT = 0;
+		if ($KWH_SUMMARY_TOT <> 0)
+			$KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY/$KWH_SUMMARY_TOT)*100,4);
 
-				//計算百分佔比
-				$KWH_SUMMARY_PERCENT = 0;
-				if ($KWH_SUMMARY_TOT <> 0) {
-					$KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY/$KWH_SUMMARY_TOT)*100,1);
-				}
+		$fmt_KWH_SUMMARY_TOT = number_format2($KWH_SUMMARY_TOT,4);
 
 $show_analysis.=<<<EOT
 			<tr class="text-center">
-			<th scope="row" class="text-left text-nowrap">({$seq_no}). {$merge_node}</th>
+			<th scope="row" class="text-left text-nowrap">$seq. $description</th>
 				<td>$m_KWH[0]</td>
 				<td>$m_KWH[1]</td>
 				<td>$m_KWH[2]</td>
@@ -344,29 +247,15 @@ $show_analysis.=<<<EOT
 				<td>$m_KWH[21]</td>
 				<td>$m_KWH[22]</td>
 				<td>$m_KWH[23]</td>
-				<td>$m_KWH[24]</td>
-				<td>$m_KWH[25]</td>
-				<td>$m_KWH[26]</td>
-				<td>$m_KWH[27]</td>
-				<td>$m_KWH[28]</td>
-				<td>$m_KWH[29]</td>
-				<td>$m_KWH[30]</td>
 				<td class="weight">$fmt_KWH_SUMMARY</td>
 				<td class="weight">$KWH_SUMMARY_PERCENT</td>
 			</tr>
 EOT;		
 
-				$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-				$KWH_SUMMARY = 0;
-
-			}
-
-		}
+			
+		
 
 	}
-
-
-	$fmt_KWH_SUMMARY_TOT = number_format2($KWH_SUMMARY_TOT,4);
 
 
 	//顯示全部總和
@@ -397,17 +286,10 @@ $show_analysis.=<<<EOT
 	   <td>$m_KWH_TOT[21]</td>
 	   <td>$m_KWH_TOT[22]</td>
 	   <td>$m_KWH_TOT[23]</td>
-	   <td>$m_KWH_TOT[24]</td>
-	   <td>$m_KWH_TOT[25]</td>
-	   <td>$m_KWH_TOT[26]</td>
-	   <td>$m_KWH_TOT[27]</td>
-	   <td>$m_KWH_TOT[28]</td>
-	   <td>$m_KWH_TOT[29]</td>
-	   <td>$m_KWH_TOT[30]</td>
 	   <td>$fmt_KWH_SUMMARY_TOT</td>
 	   <td>100</td>
    </tr>
-EOT;
+EOT;			
 
 
 
@@ -422,7 +304,6 @@ EOT;
 
 $mDB2->remove();
 $mDB->remove();
-
 
 
 /*
@@ -459,7 +340,7 @@ $alist_kw[]=array(
 //$series_data_kwh = json_encode($alist_kwh);
 
 
-$mess_title = "分電表用電月報表";
+$mess_title = "分電表用電日報表";
 
 
 $show_top_tools=<<<EOT
@@ -489,9 +370,33 @@ $show_top_tools
 		<div class="mycell text-left;" style="width:33%;padding: 35px 0 5px 50px;vertical-align: bottom;">
 		</div>
 		<div class="mycell text-center" style="width:34%;padding: 35px 0 5px 0;vertical-align: bottom;">
-			請選擇年月份 : $m_year
-			&nbsp;&nbsp;&nbsp;&nbsp;
-			<a role="button" class="btn btn-primary" href="/index.php?ch=amcase_month_summary_merge_excel&site_db=$site_db&case_id=$case_id&current_year=$current_year&current_month=$current_month&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a>
+			<div class="mytable field_container3 size12" style="width:100%;">
+				<div class="myrow">
+					<div class="mycell weight" style="width: auto;padding:3px 7px 0 0;text-align:right;">請選擇用電日期 : </div> 
+					<div class="mycell">
+						<form method="post" id="modifyForm" name="modifyForm" enctype="multipart/form-data" action="javascript:void(null);">
+						<div class="input-group date" id="get_date" style="width:420px;">
+							<input type="text" class="form-control" id="report_date" name="report_date" value="$report_date" style="color:#000;" />
+							<span class="input-group-addon input-group-text">
+								<i class="far fa-calendar-alt"></i>
+							</span>
+							<button class="btn btn-success" type="button" onclick="chdatetime(this.form);" style="padding: 5px 10px;margin:0 10px 0 5px;"><i class="fas fa-check"></i>&nbsp;變更</button>
+							&nbsp;&nbsp;&nbsp;&nbsp;
+							<a role="button" class="btn btn-primary" href="/index.php?ch=amcase_day_summary_excel&site_db=$site_db&case_id=$case_id&current_year=$am_year&current_month=$am_month&current_day=$am_day&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a>
+						</div>
+						<script type="text/javascript">
+							$(function () {
+								$('#get_date').datetimepicker({
+									locale: 'zh-tw'
+									,format:"YYYY-MM-DD"
+									,allowInputToggle: true
+								});
+							});
+						</script>
+						</form>
+					</div> 
+				</div>
+			</div>
 		</div>
 		<div class="mycell text-right" style="width:33%;padding: 35px 50px 5px 0;vertical-align: bottom;">
 			單位 : KWH
@@ -518,9 +423,34 @@ $show_report=<<<EOT
 	$show_top_tools
 	<div class="mytable" style="width:100%;background-color:#fff;">
 		<div class="myrow size14" style="width:100%;">
-		<div class="myrow size14" style="width:100%;">
 			<div class="mycell text-center" style="width:100%;padding: 10px 10px 0 10px;vertical-align: bottom;">
-				請選擇年月份 : $m_year
+				<div class="mytable field_container3" style="width:100%;">
+					<div class="myrow">
+						<div class="mycell" style="width: auto;padding:5px 0;">請選擇用電日期 : </div> 
+					</div>
+					<div class="myrow">
+						<div class="mycell">
+							<form method="post" id="modifyForm" name="modifyForm" enctype="multipart/form-data" action="javascript:void(null);">
+							<div class="input-group date w-100" id="get_date">
+								<input type="text" class="form-control" id="report_date" name="report_date" value="$report_date" style="color:#000;" />
+								<span class="input-group-addon input-group-text">
+									<i class="far fa-calendar-alt"></i>
+								</span>
+								<button class="btn btn-success" type="button" onclick="chdatetime(this.form);" style="padding: 5px 10px;margin:0 10px 0 5px;"><i class="fas fa-check"></i>&nbsp;變更</button>
+							</div>
+							<script type="text/javascript">
+								$(function () {
+									$('#get_date').datetimepicker({
+										locale: 'zh-tw'
+										,format:"YYYY-MM-DD"
+										,allowInputToggle: true
+									});
+								});
+							</script>
+							</form>
+						</div> 
+					</div>
+				</div>
 			</div>
 		</div>
 		<div class="myrow size14" style="width:100%;">
@@ -603,8 +533,13 @@ $show_report
           return false;
       });
     });
+	
 
-
+	function chdatetime(thisform) {
+		var mdate = $('#report_date').val();
+		window.location = '/index.php?ch=$ch&current_date='+mdate+'&case_id=$case_id&t=用電日報表&fm=$fm';
+		return false;
+	}	
 	
 	var series_data_kw = JSON.parse('$series_data_kw');
 
