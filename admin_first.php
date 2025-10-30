@@ -194,10 +194,10 @@ switch($ch) {
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
-	case 'amcase_month_summary_merge_excel':
+	case 'amcase_month_summary_excel':
 		if (empty($sid))
 			$sid = "view01";
-		$modal = $m_pub_modal."/green/amcase_ms/amcase_month_summary_merge_excel.php";
+		$modal = $m_pub_modal."/green/amcase_ms/amcase_month_summary_excel.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
@@ -338,6 +338,20 @@ switch($ch) {
 		if (empty($sid))
 			$sid = "pjhome01";
 		$modal = $m_pub_modal."/green/amcase_ms/grPA310_day_summary.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'report_power_demand_quarter':
+		if (empty($sid))
+			$sid = "pjhome01";
+		$modal = $m_pub_modal."/green/amcase_ms/report_power_demand_quarter.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
+	case 'report_power_demand_quarter_excel':
+		if (empty($sid))
+			$sid = "pjhome01";
+		$modal = $m_pub_modal."/green/amcase_ms/report_power_demand_quarter_excel.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;

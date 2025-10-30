@@ -65,17 +65,83 @@ function percent2($num) {
 
 
 
-$case_id = $_GET['case_id'];
+$case_id = "C1";
+
+//契約容量
+$min_kw = (float)$row_web['lc_min_value'];
+$base_kw = (float)$row_web['lc_base_value'];
+$max_kw = (float)$row_web['lc_max_value'];
+$limit_kw = (float)$row_web['lc_limit_value'];
+
+
+$home = getlang("回首頁");
+$goback = getlang("回上頁");
+$Export_Excel= getlang("匯出Excel");
+
+$mess_title = getlang("每15分鐘平均需量記錄/24小時");
+
+$Inquire = getlang("查詢");
+
+$year = getlang("年");
+$month = getlang("月");
+$day = getlang("日");
+$hour = getlang("時");
+$minute = getlang("分");
+$Voltage = getlang("電壓");
+$Current = getlang("電流");
+$Watts = getlang("瓦數");
+$Power_factor = getlang("功率因數");
+$Kilowatt_hours = getlang("仟瓦小時");
+
+
+$dataTable_de = getDataTable_de();
+$Prompt = getlang("提示訊息");
+$Confirm = getlang("確認");
+$Cancel = getlang("取消");
+
+$Close = getlang("關閉");
+$goback = getlang("回上頁");
+
+
+$mylang = $_COOKIE["lang"];
+if ($mylang == "zh_TW") {
+	$day = "日";
+} else if ($mylang == "zh_CN") {
+	$day = "日";
+} else {
+	$day = "day";
+}
+
+
+
+
+
+$fm = $_GET['fm'];
+$ch = $_GET['ch'];
+
+$auto_seq = $_GET['auto_seq'];
+
+
+$t = $_GET['t'];
+
+if (!isset($_GET['choice_date'])) {
+	$choice_date = date("Y-m-d");
+} else {
+	$choice_date = $_GET['choice_date'];
+}
+
+
+$date_filter_str = "";
+$date_query_str = "";
+
+if (!empty($choice_date)) {
+	$date_filter_str = "&choice_date=".$choice_date;
+	$date_query_str = "AND str_to_date(CONCAT(dm_year,'-',dm_month,'-',dm_day), '%Y-%m-%d') = '$choice_date'";
+}
 
 
 //載入公用函數
 @include_once '/website/include/pub_function.php';
-
-
-
-$current_year = $_GET['current_year'];
-$current_month = $_GET['current_month'];
-$current_day = $_GET['current_day'];
 
 
 
@@ -92,6 +158,9 @@ if (PHP_SAPI == 'cli')
 /** Include PHPExcel */
 require_once '/website/os/PHPExcel-1.8.1/Classes/PHPExcel.php';
 
+$Close = getlang("關閉");
+
+
 
 // Create new PHPExcel object
 $objPHPExcel = new PHPExcel();
@@ -103,404 +172,232 @@ $objPHPExcel->getProperties()->setCreator("apupu")
 							 ->setSubject("Office 2007 XLSX Document")
 							 ->setDescription("The document for Office 2007 XLSX, generated using PHP classes.")
 							 ->setKeywords("office 2007 openxml php")
-							 ->setCategory("分電表用電日報表(".$current_year."年".$current_month."月".$current_day."日)");
+							 ->setCategory("荒川_總電表每15分鐘平均需量記錄_".$choice_date);
 
 							 
 //合併儲存格						 
 $objPHPExcel->setActiveSheetIndex(0)
-			->mergeCells('A1:AA1')
-			->mergeCells('A2:AA2')
-			->mergeCells('A3:Q3')
-			->mergeCells('R3:AA3')
+			->mergeCells('B1:G1')
+			->mergeCells('B2:G2')
+			->mergeCells('B3:C3')   // 左半邊
+			->mergeCells('D3:G3');  // 右半邊
 			;
 							 
 $objPHPExcel->setActiveSheetIndex(0)
-            ->setCellValue('A1', "")
-            ->setCellValue('A2', '分電表用電日報表')
-            ->setCellValue('A3', '資料年月日：'.$current_year.'年'.$current_month.'月'.$current_day.'日')
-            ->setCellValue('R3', '單位 : KWH     報表日期：'.$today)
-            ->setCellValue('A4', '設備名稱/小時')
-            ->setCellValue('B4', '0')
-            ->setCellValue('C4', '1')
-            ->setCellValue('D4', '2')
-            ->setCellValue('E4', '3')
-            ->setCellValue('F4', '4')
-            ->setCellValue('G4', '5')
-            ->setCellValue('H4', '6')
-            ->setCellValue('I4', '7')
-            ->setCellValue('J4', '8')
-            ->setCellValue('K4', '9')
-            ->setCellValue('L4', '10')
-            ->setCellValue('M4', '11')
-            ->setCellValue('N4', '12')
-            ->setCellValue('O4', '13')
-            ->setCellValue('P4', '14')
-            ->setCellValue('Q4', '15')
-            ->setCellValue('R4', '16')
-            ->setCellValue('S4', '17')
-            ->setCellValue('T4', '18')
-            ->setCellValue('U4', '19')
-            ->setCellValue('V4', '20')
-            ->setCellValue('W4', '21')
-            ->setCellValue('X4', '22')
-            ->setCellValue('Y4', '23')
-            ->setCellValue('Z4', '合計')
-            ->setCellValue('AA4', '佔比%')
+            ->setCellValue('B1', "")
+            ->setCellValue('B2', '荒川_總電表每15分鐘平均需量記錄')
+            ->setCellValue('B3', '資料日期：' . $choice_date)
+            ->setCellValue('D3', '報表日期：'.$today)
+            ->setCellValue('B4', '電表序號')
+            ->setCellValue('B4','年')
+            ->setCellValue('C4','月')
+            ->setCellValue('D4','日')
+            ->setCellValue('E4','時')
+            ->setCellValue('F4','15分鐘')
+            ->setCellValue('G4','平均需量 KW')
+
 			;
 
 //設置字型大小
-$objPHPExcel->getActiveSheet()->getStyle('A1')->getFont()->setSize(24)->setBold(true);
-$objPHPExcel->getActiveSheet()->getStyle('A2')->getFont()->setSize(18)->setBold(true);
-$objPHPExcel->getActiveSheet()->getStyle('A3')->getFont()->setSize(16);
-$objPHPExcel->getActiveSheet()->getStyle('R3')->getFont()->setSize(12);
+$objPHPExcel->getActiveSheet()->getStyle('B1')->getFont()->setSize(24)->setBold(true);
+$objPHPExcel->getActiveSheet()->getStyle('B2')->getFont()->setSize(18)->setBold(true);
+$objPHPExcel->getActiveSheet()->getStyle('B3')->getFont()->setSize(16);
+$objPHPExcel->getActiveSheet()->getStyle('G3')->getFont()->setSize(12);
 			
-$objPHPExcel->getActiveSheet()->getStyle('A4:AA4')->getFont()->setBold(true);			
+$objPHPExcel->getActiveSheet()->getStyle('B4:G4')->getFont()->setBold(true);			
 
 //設置儲存格垂直及水平對齊
-$objPHPExcel->getActiveSheet()->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-$objPHPExcel->getActiveSheet()->getStyle('A1')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-$objPHPExcel->getActiveSheet()->getStyle('A2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-$objPHPExcel->getActiveSheet()->getStyle('A2')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-$objPHPExcel->getActiveSheet()->getStyle('A3')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
-$objPHPExcel->getActiveSheet()->getStyle('A3')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_BOTTOM);
-$objPHPExcel->getActiveSheet()->getStyle('R3')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
-$objPHPExcel->getActiveSheet()->getStyle('R3')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_BOTTOM);
+$objPHPExcel->getActiveSheet()->getStyle('B1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('B1')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('B2')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('B2')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('B3')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
+$objPHPExcel->getActiveSheet()->getStyle('B3')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_BOTTOM);
+$objPHPExcel->getActiveSheet()->getStyle('D3')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+$objPHPExcel->getActiveSheet()->getStyle('D3')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_BOTTOM);
 
 //設置行列高度
 $objPHPExcel->getActiveSheet()->getRowDimension(1)->setRowHeight(50);
 $objPHPExcel->getActiveSheet()->getRowDimension(2)->setRowHeight(40);
 $objPHPExcel->getActiveSheet()->getRowDimension(3)->setRowHeight(30);
 $objPHPExcel->getActiveSheet()->getRowDimension(4)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(5)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(6)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(7)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(8)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(9)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(10)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(11)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(12)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(13)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(14)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(15)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(16)->setRowHeight(25);
+
 
 //$objPHPExcel->getActiveSheet()->getStyle('A2:K2')->getBorders()->getBottom()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
 //$objPHPExcel->getActiveSheet()->getStyle('A2:K2')->getBorders()->getBottom()->getColor()->setRGB('000000');
 
 //設置垂及及水平對齊
-$objPHPExcel->getActiveSheet()->getStyle('A4:AA4')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-$objPHPExcel->getActiveSheet()->getStyle('A4:AA4')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('B4:G4')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('B4:G4')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
 
 //設置欄位寬度
-$objPHPExcel->getActiveSheet()->getColumnDimension('A')->setWidth(20);
+// $objPHPExcel->getActiveSheet()->getColumnDimension('A')->setWidth(15);
+$objPHPExcel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
+$objPHPExcel->getActiveSheet()->getColumnDimension('C')->setWidth(20);
+$objPHPExcel->getActiveSheet()->getColumnDimension('D')->setWidth(20);
+$objPHPExcel->getActiveSheet()->getColumnDimension('E')->setWidth(20);
+$objPHPExcel->getActiveSheet()->getColumnDimension('F')->setWidth(20);
+$objPHPExcel->getActiveSheet()->getColumnDimension('G')->setWidth(40);
+
+
+
 /*
 //$objPHPExcel->getActiveSheet()->getColumnDimension('A')->setAutoSize(true);
 $objPHPExcel->getActiveSheet()->getColumnDimension('A')->setWidth(8);
 $objPHPExcel->getActiveSheet()->getColumnDimension('B')->setWidth(8);
 */
 
+// 項目名稱
+$objPHPExcel->getActiveSheet()->getStyle('B4')->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
+$objPHPExcel->getActiveSheet()->getStyle('B4')->getFill()->getStartColor()->setRGB('C0C0C0');
 
 
-//設置底色
-$objPHPExcel->getActiveSheet()->getStyle('A4:Y4')->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
-$objPHPExcel->getActiveSheet()->getStyle('A4:Y4')->getFill()->getStartColor()->setRGB('7FDBFF');
+$objPHPExcel->getActiveSheet()->getStyle('C4:G4')->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
+$objPHPExcel->getActiveSheet()->getStyle('C4:G4')->getFill()->getStartColor()->setRGB('C0C0C0');
 
-$objPHPExcel->getActiveSheet()->getStyle('Z4:AA4')->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
-$objPHPExcel->getActiveSheet()->getStyle('Z4:AA4')->getFill()->getStartColor()->setRGB('FFDC00');
 
-//設置邊框線及顏色			
-$objPHPExcel->getActiveSheet()->getStyle('A4:AA4')->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
-$objPHPExcel->getActiveSheet()->getStyle('A4:AA4')->getBorders()->getAllBorders()->getColor()->setRGB('000000');
+// 合計 (AG4) 和 % (AH4) 藍色
+$objPHPExcel->getActiveSheet()->getStyle('AG4:G4')->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
+$objPHPExcel->getActiveSheet()->getStyle('AG4:G4')->getFill()->getStartColor()->setRGB('7FDBFF');
+
+// 標題列 (A4:O4) 邊框 + 黑色
+$objPHPExcel->getActiveSheet()->getStyle('B4:G4')->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
+$objPHPExcel->getActiveSheet()->getStyle('B4:G4')->getBorders()->getAllBorders()->getColor()->setRGB('000000');
+
+
+
+
+
+
+
 
 
 
 $mDB = "";
 $mDB = new MywebDB();
 
-$mDB2 = "";
-$mDB2 = new MywebDB();
+$cate_data = array();
+$m_MAX_KW = array();
+for ($i = 0; $i <= 96; $i++) {
 
-
-//先取得總和
-//先取得量測節點
-$Qry="SELECT case_id,router_id,ammeter_id,node_no FROM ammeter_node
-WHERE case_id = '$case_id' AND `enabled` = 'Y' AND main_meter = 'N'
-ORDER BY orderby";
-$mDB->query($Qry);
-
-$KWH_SUMMARY_TOT = 0;		//全部總和
-
-if ($mDB->rowCount() > 0) {
-	while ($row=$mDB->fetchRow(2)) {
-		$case_id = $row['case_id'];
-		$router_id = $row['router_id'];
-		$ammeter_id = $row['ammeter_id'];
-		$node_no = $row['node_no'];
-
-		$Qry2="SELECT * FROM ammeter_node_kwh_hour
-			WHERE case_id = '$case_id' AND router_id = '$router_id' AND ammeter_id = '$ammeter_id'
-			AND am_year = '$current_year' AND am_month = '$current_month' AND am_day = '$current_day'
-			";
-		$mDB2->query($Qry2);
-		if ($mDB2->rowCount() > 0) {
-			while ($row2=$mDB2->fetchRow(2)) {
-
-				for ($i = 0; $i <= 23; $i++) {
-					$HOUR = $row2['am_hour'];
-					if ($HOUR == $i) {
-						$KWH = "KWH_".$node_no;
-						//累計總和
-						$KWH_SUMMARY_TOT = $KWH_SUMMARY_TOT+$row2[$KWH];
-					}
-				}
-
-			}
-		}
-	}
+	$cate_data[] = $i;
+	$m_MAX_KW[] = 0;
 }
 
+$series_data_cate_data = json_encode($cate_data);
 
-$line = 4;
+$Qry="SELECT seq,dm_year,dm_month,dm_day,dm_hour,dm_minutes,ROUND(MAX(AVG_KW),2) AS MAX_KW
+FROM grPA310_KW_quarter
+WHERE case_id = '$case_id' ".$date_query_str."
+GROUP BY case_id,dm_year,dm_month,dm_day,dm_hour,dm_minutes
+ORDER BY auto_seq DESC LIMIT 0,96";
 
-//先取得量測節點
-$Qry="SELECT * FROM ammeter_node
-WHERE case_id = '$case_id' AND `enabled` = 'Y' AND main_meter = 'N'
-ORDER BY orderby";
 $mDB->query($Qry);
 
-$m_KWH_TOT = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
-if ($mDB->rowCount() > 0) {
+$QUARTER_TOTAL_KW = 0;
+$QUARTER_TOTAL_KW_PERCENT = 0;
 
-	$seq = 0;
-	while ($row=$mDB->fetchRow(2)) {
-		$seq++;
-		$case_id = $row['case_id'];
-		$router_id = $row['router_id'];
-		$ammeter_id = $row['ammeter_id'];
-		$node_no = $row['node_no'];
-		$phase = $row['phase'];
-		$description = $row['description'];
-		$orderby = $row['orderby'];
+$QUARTER_KW_alist = array();
+$QUARTER_KW_data = array();
+$QUARTER_KW_data2 = array();
 
-		//再取得各 node 的用電 KWH 數值
-		$Qry2="SELECT * FROM ammeter_node_kwh_hour
-			WHERE case_id = '$case_id' AND router_id = '$router_id' AND ammeter_id = '$ammeter_id'
-			AND am_year = '$current_year' AND am_month = '$current_month' AND am_day = '$current_day'
-			";
-		$mDB2->query($Qry2);
+//$PAGE_QUARTER_MAX_KW = $limit_kw;
+$PAGE_QUARTER_MAX_KW = 0;
+$rowCount = $mDB->rowCount();
 
-		$KWH_SUMMARY = 0;
-		if ($mDB2->rowCount() > 0) {
+if ($rowCount > 0) {
+	$rowIndex = 5;
+	$sheet = $objPHPExcel->setActiveSheetIndex(0);
 
-			$m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-			while ($row2=$mDB2->fetchRow(2)) {
+	$currentHour = null;
+	$colorSwitch = false;
 
-				for ($i = 0; $i <= 23; $i++) {
-					$HOUR = $row2['am_hour'];
-					if ($HOUR == $i) {
-						$KWH = "KWH_".$node_no;
-						$m_KWH[$i] = $row2[$KWH];
-						$KWH_SUMMARY = $KWH_SUMMARY+$row2[$KWH];	//橫向加總
-						//累計加總
-						$m_KWH_TOT[$i] = $m_KWH_TOT[$i]+$row2[$KWH];
+	while ($row = $mDB->fetchRow(2)) {
 
+		$seq = $row['seq'];
+		$dm_year = $row['dm_year'];
+		$dm_month = $row['dm_month'];
+		$dm_day = $row['dm_day'];
+		$dm_hour = $row['dm_hour'];
+		$dm_minutes = $row['dm_minutes'];
+		$MAX_KW = $row['MAX_KW'];
 
-					}
-				}
+		$m_MAX_KW[$dm_hour] = (float)$MAX_KW;
+
+		// 切換小時時改底色、加分隔線
+		if ($currentHour !== $dm_hour) {
+			$currentHour = $dm_hour;
+			$colorSwitch = !$colorSwitch;
+
+			if ($rowIndex > 5) {
+				$sheet->getStyle("B{$rowIndex}:G{$rowIndex}")
+					->getBorders()
+					->getTop()
+					->setBorderStyle(PHPExcel_Style_Border::BORDER_MEDIUM)
+					->getColor()->setARGB('FFBFBFBF');
 			}
 		}
 
-		for ($i = 0; $i <= 30; $i++) {
-			$m_KWH[$i] = round($m_KWH[$i],4);
-			$m_KWH_TOT[$i] = round($m_KWH_TOT[$i],4);
-		}
+		// 寫入資料
+		$sheet
+			// ->setCellValue("A{$rowIndex}", $seq)
+			->setCellValue("B{$rowIndex}", $dm_year)
+			->setCellValue("C{$rowIndex}", $dm_month)
+			->setCellValue("D{$rowIndex}", $dm_day)
+			->setCellValue("E{$rowIndex}", $dm_hour)
+			->setCellValue("F{$rowIndex}", $dm_minutes)
+			->setCellValue("G{$rowIndex}", $MAX_KW);
 
-		$KWH_SUMMARY = round($KWH_SUMMARY,4);
+		// 套用底色
+		$fillColor = $colorSwitch ? 'FFF2F2F2' : 'FFFFFFFF';
+		$sheet->getStyle("B{$rowIndex}:G{$rowIndex}")
+			->getFill()
+			->setFillType(PHPExcel_Style_Fill::FILL_SOLID)
+			->getStartColor()
+			->setARGB($fillColor);
 
-		//計算百分佔比
-		$KWH_SUMMARY_PERCENT = 0;
-		if ($KWH_SUMMARY_TOT <> 0)
-			$KWH_SUMMARY_PERCENT = round(($KWH_SUMMARY/$KWH_SUMMARY_TOT)*100,4);
+		// 套用字體、對齊、邊框（不含填色）
+		$style = $sheet->getStyle("B{$rowIndex}:G{$rowIndex}");
+		$style->getAlignment()
+			->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER)
+			->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+		$style->getFont()->setSize(12);
+		$style->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN)
+			->getColor()->setARGB('FF000000');
 
-		$KWH_SUMMARY_TOT = round($KWH_SUMMARY_TOT,4);
+		$sheet->getRowDimension($rowIndex)->setRowHeight(20);
 
-
-		$line++;
-
-		$a = 'A'.$line;
-		$b = 'B'.$line;
-		$c = 'C'.$line;
-		$d = 'D'.$line;
-		$e = 'E'.$line;
-		$f = 'F'.$line;
-		$g = 'G'.$line;
-		$h = 'H'.$line;
-		$i = 'I'.$line;
-		$j = 'J'.$line;
-		$k = 'K'.$line;
-		$l = 'L'.$line;
-		$m = 'M'.$line;
-		$n = 'N'.$line;
-		$o = 'O'.$line;
-		$p = 'P'.$line;
-		$q = 'Q'.$line;
-		$r = 'R'.$line;
-		$s = 'S'.$line;
-		$t = 'T'.$line;
-		$u = 'U'.$line;
-		$v = 'V'.$line;
-		$w = 'W'.$line;
-		$x = 'X'.$line;
-		$y = 'Y'.$line;
-		$z = 'Z'.$line;
-		$aa = 'AA'.$line;
-
-		
-
-		//設置水平置中
-		$objPHPExcel->getActiveSheet()->getStyle($a)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
-		$objPHPExcel->getActiveSheet()->getStyle($b.':'.$aa)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-		
-		//設置垂直置上
-		$objPHPExcel->getActiveSheet()->getStyle($b.':'.$aa)->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-		
-		
-		//設置自動換行
-		//$objPHPExcel->getActiveSheet()->getStyle($a.':'.$t)->getAlignment()->setWrapText(true);
-		
-		
-		$objPHPExcel->setActiveSheetIndex(0)
-					->setCellValue($a, $seq." ".$description)
-					->setCellValue($b, $m_KWH[0])
-					->setCellValue($c, $m_KWH[1])
-					->setCellValue($d, $m_KWH[2])
-					->setCellValue($e, $m_KWH[3])
-					->setCellValue($f, $m_KWH[4])
-					->setCellValue($g, $m_KWH[5])
-					->setCellValue($h, $m_KWH[6])
-					->setCellValue($i, $m_KWH[7])
-					->setCellValue($j, $m_KWH[8])
-					->setCellValue($k, $m_KWH[9])
-					->setCellValue($l, $m_KWH[10])
-					->setCellValue($m, $m_KWH[11])
-					->setCellValue($n, $m_KWH[12])
-					->setCellValue($o, $m_KWH[13])
-					->setCellValue($p, $m_KWH[14])
-					->setCellValue($q, $m_KWH[15])
-					->setCellValue($r, $m_KWH[16])
-					->setCellValue($s, $m_KWH[17])
-					->setCellValue($t, $m_KWH[18])
-					->setCellValue($u, $m_KWH[19])
-					->setCellValue($v, $m_KWH[20])
-					->setCellValue($w, $m_KWH[21])
-					->setCellValue($x, $m_KWH[22])
-					->setCellValue($y, $m_KWH[23])
-					->setCellValue($z, $KWH_SUMMARY)
-					->setCellValue($aa, $KWH_SUMMARY_PERCENT)
-			;				
-
-		//設置邊框線及顏色
-		$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
-		$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getBorders()->getAllBorders()->getColor()->setRGB('000000');
-		
-
-		
-		
-
+		$rowIndex++;
 	}
 
-
-	$line++;
-
-	$a = 'A'.$line;
-	$b = 'B'.$line;
-	$c = 'C'.$line;
-	$d = 'D'.$line;
-	$e = 'E'.$line;
-	$f = 'F'.$line;
-	$g = 'G'.$line;
-	$h = 'H'.$line;
-	$i = 'I'.$line;
-	$j = 'J'.$line;
-	$k = 'K'.$line;
-	$l = 'L'.$line;
-	$m = 'M'.$line;
-	$n = 'N'.$line;
-	$o = 'O'.$line;
-	$p = 'P'.$line;
-	$q = 'Q'.$line;
-	$r = 'R'.$line;
-	$s = 'S'.$line;
-	$t = 'T'.$line;
-	$u = 'U'.$line;
-	$v = 'V'.$line;
-	$w = 'W'.$line;
-	$x = 'X'.$line;
-	$y = 'Y'.$line;
-	$z = 'Z'.$line;
-	$aa = 'AA'.$line;
-
-	$objPHPExcel->setActiveSheetIndex(0)
-				->setCellValue($a, '全部總和')
-				->setCellValue($b, $m_KWH_TOT[0])
-				->setCellValue($c, $m_KWH_TOT[1])
-				->setCellValue($d, $m_KWH_TOT[2])
-				->setCellValue($e, $m_KWH_TOT[3])
-				->setCellValue($f, $m_KWH_TOT[4])
-				->setCellValue($g, $m_KWH_TOT[5])
-				->setCellValue($h, $m_KWH_TOT[6])
-				->setCellValue($i, $m_KWH_TOT[7])
-				->setCellValue($j, $m_KWH_TOT[8])
-				->setCellValue($k, $m_KWH_TOT[9])
-				->setCellValue($l, $m_KWH_TOT[10])
-				->setCellValue($m, $m_KWH_TOT[11])
-				->setCellValue($n, $m_KWH_TOT[12])
-				->setCellValue($o, $m_KWH_TOT[13])
-				->setCellValue($p, $m_KWH_TOT[14])
-				->setCellValue($q, $m_KWH_TOT[15])
-				->setCellValue($r, $m_KWH_TOT[16])
-				->setCellValue($s, $m_KWH_TOT[17])
-				->setCellValue($t, $m_KWH_TOT[18])
-				->setCellValue($u, $m_KWH_TOT[19])
-				->setCellValue($v, $m_KWH_TOT[20])
-				->setCellValue($w, $m_KWH_TOT[21])
-				->setCellValue($x, $m_KWH_TOT[22])
-				->setCellValue($y, $m_KWH_TOT[23])
-				->setCellValue($z, $KWH_SUMMARY_TOT)
-				->setCellValue($aa, '100')
-				;				
-
-	//設置底色
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getFill()->getStartColor()->setRGB('FFDC00');
-
-	//設置邊框線及顏色			
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getBorders()->getAllBorders()->getColor()->setRGB('000000');
-
-	//設置水平置中
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-	
-	//設置垂直置上
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-
-	$objPHPExcel->getActiveSheet()->getStyle($a.':'.$aa)->getFont()->setBold(true);			
-
-	$objPHPExcel->getActiveSheet()->getRowDimension($line)->setRowHeight(30);
-
-	
+	// 不再使用 applyFromArray 蓋全範圍
 }
 
-$mDB2->remove();
-$mDB->remove();
-
-
-
-
-//Set page orientation and size 方向大小
-$objPHPExcel->getActiveSheet()->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
-$objPHPExcel->getActiveSheet()->getPageSetup()->setPaperSize(PHPExcel_Worksheet_PageSetup::PAPERSIZE_A4);
-
+$rowCount = $mDB->rowCount();
 
 
 // Rename worksheet
-$objPHPExcel->getActiveSheet()->setTitle("分電表用電日報表(".$current_year."年".$current_month."月".$current_day."日)");
+$objPHPExcel->getActiveSheet()->setTitle("荒川_每月用電總量分析表_".$choice_date);
 
 
 // Set active sheet index to the first sheet, so Excel opens this as the first sheet
 $objPHPExcel->setActiveSheetIndex(0);
 
 
-$xlsx_filename = "分電表用電日報表(".$current_year."年".$current_month."月".$current_day."日).xls";
+$xlsx_filename = "荒川_總電表每月用電總量分析表_".$choice_date.".xls";
 
 // Redirect output to a client’s web browser (Excel5)
 header('Content-Type: application/vnd.ms-excel');

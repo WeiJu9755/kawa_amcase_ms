@@ -336,9 +336,9 @@ $show_filter=<<<EOT
 					<div class="btn-group" role="group">
 						<button id="inquery" class="btn btn-info" type="button" onclick="CheckValue(this.form);"/><i class="fas fa-search"></i>&nbsp;$Inquire</button>
 						<button class="btn btn-info" type="button" onclick="window.location.href='$thisurl';"/><i class="fas fa-undo"></i>&nbsp;Reset</button>
-						<!--
-						<a role="button" class="btn btn-success" href="/index.php?ch=grPA310_day_summary_excel&choice_date=$choice_date&end_date=$end_date&auto_seq=$o_auto_seq&caption=$url_caption&fm=$fm"><i class="far fa-file-excel"></i>&nbsp;$Export_Excel</a>
-						-->
+
+						<a role="button" class="btn btn-success" href="/index.php?ch=report_power_demand_quarter_excel&choice_date=$choice_date&t=$t&auto_seq=$auto_seq&fm=$fm"><i class="far fa-file-excel"></i>&nbsp;$Export_Excel</a>
+
 					</div>
 				</div>
 				</div>
@@ -355,7 +355,7 @@ $show_top_tools=<<<EOT
 				<a role="button" class="btn btn-light float-left " href="/index.php?case_id=$case_id&fm=analysis"><i class="bi bi-chevron-left"></i>&nbsp;回上頁</a>
 			</div>
 			<div class="mycell weight" style="width:60%;padding: 10px 5px;text-align:center;">
-				<h3>$mess_title</h3>
+				<h3>總電表每15分鐘平均需量記錄</h3>
 			</div>
 			<div class="mycell" style="width:20%;text-align:right;padding: 10px;vertical-align: bottom;">
 			</div>
