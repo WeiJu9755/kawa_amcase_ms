@@ -65,7 +65,7 @@ function percent2($num) {
 
 
 
-$case_id = $_GET['case_id'];
+$case_id = "C1";
 
 
 //載入公用函數
@@ -155,8 +155,8 @@ $objPHPExcel->setActiveSheetIndex(0)
             ->setCellValue('K4', $Oct)
             ->setCellValue('L4', $Nov)
             ->setCellValue('M4', $Dec)
-            ->setCellValue('N4', '合計')
-            ->setCellValue('O4', '佔比%')
+            ->setCellValue('N4', '最高/合計')
+            ->setCellValue('O4', '比重%')
 			;
 
 //設置字型大小
@@ -194,6 +194,7 @@ $objPHPExcel->getActiveSheet()->getRowDimension(13)->setRowHeight(25);
 $objPHPExcel->getActiveSheet()->getRowDimension(14)->setRowHeight(25);
 $objPHPExcel->getActiveSheet()->getRowDimension(15)->setRowHeight(25);
 $objPHPExcel->getActiveSheet()->getRowDimension(16)->setRowHeight(25);
+$objPHPExcel->getActiveSheet()->getRowDimension(17)->setRowHeight(25);
 
 
 //$objPHPExcel->getActiveSheet()->getStyle('A2:K2')->getBorders()->getBottom()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
@@ -254,12 +255,12 @@ $objPHPExcel->getActiveSheet()->getStyle('A4:O4')->getBorders()->getAllBorders()
 
 // ===== 資料區設定 (B5:O15) =====
 // 邊框 + 黑色
-$objPHPExcel->getActiveSheet()->getStyle('A5:O15')->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
-$objPHPExcel->getActiveSheet()->getStyle('A5:O15')->getBorders()->getAllBorders()->getColor()->setRGB('000000');
+$objPHPExcel->getActiveSheet()->getStyle('A5:O17')->getBorders()->getAllBorders()->setBorderStyle(PHPExcel_Style_Border::BORDER_THIN);
+$objPHPExcel->getActiveSheet()->getStyle('A5:O17')->getBorders()->getAllBorders()->getColor()->setRGB('000000');
 
 // 水平與垂直置中
-$objPHPExcel->getActiveSheet()->getStyle('A5:O15')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-$objPHPExcel->getActiveSheet()->getStyle('A5:O15')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('A5:O17')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+$objPHPExcel->getActiveSheet()->getStyle('A5:O17')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
 
 
 
@@ -269,15 +270,17 @@ $objPHPExcel->getActiveSheet()->getStyle('A5:O15')->getAlignment()->setVertical(
 $objPHPExcel->setActiveSheetIndex(0)
 		            ->setCellValue('A5', '計費起始日')
 					->setCellValue('A6', '計費迄止日')
-					->setCellValue('A7', '經常契約(KW)')
-					->setCellValue('A8', '經常最高需量(KW)')
+					->setCellValue('A7', '經常契約容量(KW)')
+					->setCellValue('A8', '尖峰需量(KW)')
 					->setCellValue('A9', '半尖峰需量(KW)')
-					->setCellValue('A10', '離峰需量(KW)')
-					->setCellValue('A11', '經常(尖峰)度數(KWh)')
-					->setCellValue('A12', '半尖峰度數(KWh)')
-					->setCellValue('A13', '離峰度數(KWh)')
-					->setCellValue('A14', '總用電度數(KWh)')
-					->setCellValue('A15', '功率因數(%)')
+					->setCellValue('A10', '週六半尖峰需量(KW)')
+					->setCellValue('A11', '離峰需量(KW)')
+					->setCellValue('A12', '尖峰度數(KWh)')
+					->setCellValue('A13', '半尖峰度數(KWh)')
+					->setCellValue('A14', '週六半尖峰度數(KWh)')
+					->setCellValue('A15', '離峰度數(KWh)')
+					->setCellValue('A16', '總用電度數(KWh)')
+					->setCellValue('A17', '功率因數(%)')
 					;
 
 $styleArray = array(
@@ -290,8 +293,8 @@ $styleArray = array(
     )
 );
 
-// 套用到 A5:A15
-$objPHPExcel->getActiveSheet()->getStyle('A5:A15')->applyFromArray($styleArray);
+// 套用到 A5:A17
+$objPHPExcel->getActiveSheet()->getStyle('A5:A17')->applyFromArray($styleArray);
 
 
 
@@ -350,11 +353,13 @@ $mDB->query($Qry);
 
 $m_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_HALF_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
+$m_SATURDAY_HALF_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_OFF_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_DEMAND_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 
 $m_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_HALF_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
+$m_SATURDAY_HALF_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_OFF_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 
@@ -371,9 +376,11 @@ if ($rowCount > 0) {
 		$DEMAND_KW = $PA310_row['DEMAND_KW'];
 		$PEAK_KW = $PA310_row['PEAK_KW'];
 		$HALF_PEAK_KW = $PA310_row['HALF_PEAK_KW'];
+		$SATURDAY_HALF_PEAK_KW = $PA310_row['SATURDAY_HALF_PEAK_KW'];
 		$OFF_PEAK_KW = $PA310_row['OFF_PEAK_KW'];
 		$PEAK_KWH = $PA310_row['PEAK_KWH'];
 		$HALF_PEAK_KWH = $PA310_row['HALF_PEAK_KWH'];
+		$SATURDAY_HALF_PEAK_KWH = $PA310_row['SATURDAY_HALF_PEAK_KWH'];
 		$OFF_PEAK_KWH = $PA310_row['OFF_PEAK_KWH'];
 		$KWH = $PA310_row['KWH'];
 		$PF = $PA310_row['PF'];
@@ -385,9 +392,11 @@ if ($rowCount > 0) {
 			,$DEMAND_KW
 			,$PEAK_KW
 			,$HALF_PEAK_KW
+			,$SATURDAY_HALF_PEAK_KW
 			,$OFF_PEAK_KW
 			,$PEAK_KWH
 			,$HALF_PEAK_KWH
+			,$SATURDAY_HALF_PEAK_KWH
 			,$OFF_PEAK_KWH
 			,$KWH
 			,$PF
@@ -396,11 +405,13 @@ if ($rowCount > 0) {
 
 		$m_PEAK_KW[$current_month-1] = round($PEAK_KW,2);
 		$m_HALF_PEAK_KW[$current_month-1] = round($HALF_PEAK_KW,2);
+		$m_SATURDAY_HALF_PEAK_KW[$current_month-1] = round($SATURDAY_HALF_PEAK_KW,2);
 		$m_OFF_PEAK_KW[$current_month-1] = round($OFF_PEAK_KW,2);
 		$m_DEMAND_KW[$current_month-1] = round($DEMAND_KW,2);
 
 		$m_PEAK_KWH[$current_month-1] = round($PEAK_KWH,2);
 		$m_HALF_PEAK_KWH[$current_month-1] = round($HALF_PEAK_KWH,2);
+		$m_SATURDAY_HALF_PEAK_KWH[$current_month-1] = round($SATURDAY_HALF_PEAK_KWH,2);
 		$m_OFF_PEAK_KWH[$current_month-1] = round($OFF_PEAK_KWH,2);
 		$m_KWH[$current_month-1] = round($KWH,2);
 
@@ -435,6 +446,9 @@ if ($count > 0) {
 		$HALF_PEAK_KW = "HALF_PEAK_KW"."_".$i;
 		$$HALF_PEAK_KW = "-";
 
+		$SATURDAY_HALF_PEAK_KW = "SATURDAY_HALF_PEAK_KW"."_".$i;
+		$$SATURDAY_HALF_PEAK_KW = "_";
+
 		$OFF_PEAK_KW = "OFF_PEAK_KW"."_".$i;
 		$$OFF_PEAK_KW = "-";
 
@@ -443,6 +457,9 @@ if ($count > 0) {
 
 		$HALF_PEAK_KWH = "HALF_PEAK_KWH"."_".$i;
 		$$HALF_PEAK_KWH = "-";
+		
+		$SATURDAY_HALF_PEAK_KWH = "SATURDAY_HALF_PEAK_KWH"."_".$i;
+		$$SATURDAY_HALF_PEAK_KWH = "_";
 
 		$OFF_PEAK_KWH = "OFF_PEAK_KWH"."_".$i;
 		$$OFF_PEAK_KWH = "-";
@@ -460,9 +477,11 @@ if ($count > 0) {
 
 	$PEAK_KW_MAX = 0;
 	$HALF_PEAK_KW_MAX = 0;
+	$SATURDAY_HALF_PEAK_KW_MAX = 0;
 	$OFF_PEAK_KW_MAX = 0;
 	$PEAK_KWH_TOTAL = 0;
 	$HALF_PEAK_KWH_TOTAL = 0;
+	$SATURDAY_HALF_PEAK_KWH_TOTAL = 0;
 	$OFF_PEAK_KWH_TOTAL = 0;
 	$KWH_TOTAL = 0;
 
@@ -499,6 +518,13 @@ if ($count > 0) {
 			$HALF_PEAK_KW_MAX = $val[$k];
 
 		$k++;
+		$SATURDAY_HALF_PEAK_KW = "SATURDAY_HALF_PEAK_KW"."_".$current_month;
+		$$SATURDAY_HALF_PEAK_KW = number_format2($val[$k],2);
+		if ($val[$k] > $SATURDAY_HALF_PEAK_KW_MAX)
+			$SATURDAY_HALF_PEAK_KW_MAX = $val[$k];
+
+
+		$k++;
 		$OFF_PEAK_KW = "OFF_PEAK_KW"."_".$current_month;
 		$$OFF_PEAK_KW = number_format2($val[$k],2);
 		if ($val[$k] > $OFF_PEAK_KW_MAX)
@@ -513,6 +539,11 @@ if ($count > 0) {
 		$HALF_PEAK_KWH = "HALF_PEAK_KWH"."_".$current_month;
 		$$HALF_PEAK_KWH = number_format2($val[$k],2);
 		$HALF_PEAK_KWH_TOTAL += $val[$k];
+
+		$k++;
+		$SATURDAY_HALF_PEAK_KWH = "SATURDAY_HALF_PEAK_KWH"."_".$current_month;
+		$$SATURDAY_HALF_PEAK_KWH = number_format2($val[$k],2);
+		$SATURDAY_HALF_PEAK_KWH_TOTAL += $val[$k];
 
 		$k++;
 		$OFF_PEAK_KWH = "OFF_PEAK_KWH"."_".$current_month;
@@ -533,18 +564,22 @@ if ($count > 0) {
 
 	$PEAK_KW_MAX = number_format2($PEAK_KW_MAX,2);
 	$HALF_PEAK_KW_MAX = number_format2($HALF_PEAK_KW_MAX,2);
+	$SATURDAY_HALF_PEAK_KW_MAX = number_format2($SATURDAY_HALF_PEAK_KW_MAX,2);
 	$OFF_PEAK_KW_MAX = number_format2($OFF_PEAK_KW_MAX,2);
 	$PEAK_KWH_TOTAL = number_format2($PEAK_KWH_TOTAL,2);
 	$HALF_PEAK_KWH_TOTAL = number_format2($HALF_PEAK_KWH_TOTAL,2);
+	$SATURDAY_HALF_PEAK_KWH_TOTAL = number_format2($SATURDAY_HALF_PEAK_KWH_TOTAL,2);
 	$OFF_PEAK_KWH_TOTAL = number_format2($OFF_PEAK_KWH_TOTAL,2);
 	$KWH_TOTAL = number_format2($KWH_TOTAL,2);
 
 
 	$PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $PEAK_KW_PERCENT = round($PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
 	$HALF_PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $HALF_PEAK_KW_PERCENT = round($HALF_PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
+	$SATURDAY_HALF_PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $SATURDAY_HALF_PEAK_KW_PERCENT = round($SATURDAY_HALF_PEAK_KW_MAX / $DEMAND_KW_MAX * 100, 2) . "%";
 	$OFF_PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $OFF_PEAK_KW_PERCENT = round($OFF_PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
 	$PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $PEAK_KWH_PERCENT = round($PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
 	$HALF_PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $HALF_PEAK_KWH_PERCENT = round($HALF_PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
+	$SATURDAY_HALF_PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $SATURDAY_HALF_PEAK_KWH_PERCENT = round($SATURDAY_HALF_PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
 	$OFF_PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $OFF_PEAK_KWH_PERCENT = round($OFF_PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
 	$KWH_PERCENT = "100%";
 
@@ -587,7 +622,7 @@ $objPHPExcel->setActiveSheetIndex(0)
 
 			;
 
-//經常契約(KW)
+//經常契約容量(KW)
 $objPHPExcel->setActiveSheetIndex(0)
 
             ->setCellValue('B7', $DEMAND_KW_1)
@@ -616,7 +651,7 @@ $objPHPExcel->getActiveSheet()->getStyle('A7:O7')->applyFromArray(
     )
 );
 
-//經常最高需量(KW)
+//尖峰需量(KW)
 $PEAK_KW_PERCENT = "";
 if ($DEMAND_KW_MAX > 0) {
     $PEAK_KW_PERCENT = number_format($PEAK_KW_MAX / $DEMAND_KW_MAX * 100, 2) . "%";
@@ -659,103 +694,141 @@ $objPHPExcel->setActiveSheetIndex(0)
 			->setCellValue('O9', $HALF_PEAK_KW_PERCENT)
 			;
 
+//SATURDAY_HALF_PEAK_KW   週六半尖峰需量(KW)
+$objPHPExcel->setActiveSheetIndex(0)
+
+			->setCellValue('B10', $SATURDAY_HALF_PEAK_KW_1)
+			->setCellValue('C10', $SATURDAY_HALF_PEAK_KW_2)
+			->setCellValue('D10', $SATURDAY_HALF_PEAK_KW_3)
+			->setCellValue('E10', $SATURDAY_HALF_PEAK_KW_4)
+			->setCellValue('F10', $SATURDAY_HALF_PEAK_KW_5)
+			->setCellValue('G10', $SATURDAY_HALF_PEAK_KW_6)
+			->setCellValue('H10', $SATURDAY_HALF_PEAK_KW_7)
+			->setCellValue('I10', $SATURDAY_HALF_PEAK_KW_8)
+			->setCellValue('J10', $SATURDAY_HALF_PEAK_KW_9)
+			->setCellValue('K10', $SATURDAY_HALF_PEAK_KW_10)
+			->setCellValue('L10', $SATURDAY_HALF_PEAK_KW_11)
+			->setCellValue('M10', $SATURDAY_HALF_PEAK_KW_12)
+			->setCellValue('N10', $SATURDAY_HALF_PEAK_KW_MAX)
+			->setCellValue('O10', $SATURDAY_HALF_PEAK_KW_PERCENT)
+			;
+
 //離峰需量(KW)
 $objPHPExcel->setActiveSheetIndex(0)
 
-			->setCellValue('B10', $OFF_PEAK_KW_1)
-			->setCellValue('C10', $OFF_PEAK_KW_2)
-			->setCellValue('D10', $OFF_PEAK_KW_3)
-			->setCellValue('E10', $OFF_PEAK_KW_4)
-			->setCellValue('F10', $OFF_PEAK_KW_5)
-			->setCellValue('G10', $OFF_PEAK_KW_6)
-			->setCellValue('H10', $OFF_PEAK_KW_7)
-			->setCellValue('I10', $OFF_PEAK_KW_8)
-			->setCellValue('J10', $OFF_PEAK_KW_9)
-			->setCellValue('K10', $OFF_PEAK_KW_10)
-			->setCellValue('L10', $OFF_PEAK_KW_11)
-			->setCellValue('M10', $OFF_PEAK_KW_12)
-			->setCellValue('N10', $OFF_PEAK_KW_MAX)
-			->setCellValue('O10', $OFF_PEAK_KW_PERCENT)
+			->setCellValue('B11', $OFF_PEAK_KW_1)
+			->setCellValue('C11', $OFF_PEAK_KW_2)
+			->setCellValue('D11', $OFF_PEAK_KW_3)
+			->setCellValue('E11', $OFF_PEAK_KW_4)
+			->setCellValue('F11', $OFF_PEAK_KW_5)
+			->setCellValue('G11', $OFF_PEAK_KW_6)
+			->setCellValue('H11', $OFF_PEAK_KW_7)
+			->setCellValue('I11', $OFF_PEAK_KW_8)
+			->setCellValue('J11', $OFF_PEAK_KW_9)
+			->setCellValue('K11', $OFF_PEAK_KW_10)
+			->setCellValue('L11', $OFF_PEAK_KW_11)
+			->setCellValue('M11', $OFF_PEAK_KW_12)
+			->setCellValue('N11', $OFF_PEAK_KW_MAX)
+			->setCellValue('O11', $OFF_PEAK_KW_PERCENT)
 			;
 
-//PEAK_KWH   經常(尖峰)度數(KWh)
+//PEAK_KWH   尖峰度數(KWh)
 $objPHPExcel->setActiveSheetIndex(0)
 
-			->setCellValue('B11', $PEAK_KWH_1)
-			->setCellValue('C11', $PEAK_KWH_2)
-			->setCellValue('D11', $PEAK_KWH_3)
-			->setCellValue('E11', $PEAK_KWH_4)
-			->setCellValue('F11', $PEAK_KWH_5)
-			->setCellValue('G11', $PEAK_KWH_6)
-			->setCellValue('H11', $PEAK_KWH_7)
-			->setCellValue('I11', $PEAK_KWH_8)
-			->setCellValue('J11', $PEAK_KWH_9)
-			->setCellValue('K11', $PEAK_KWH_10)
-			->setCellValue('L11', $PEAK_KWH_11)
-			->setCellValue('M11', $PEAK_KWH_12)
-			->setCellValue('N11', $PEAK_KWH_TOTAL)
-			->setCellValue('O11', $PEAK_KWH_PERCENT)
+			->setCellValue('B12', $PEAK_KWH_1)
+			->setCellValue('C12', $PEAK_KWH_2)
+			->setCellValue('D12', $PEAK_KWH_3)
+			->setCellValue('E12', $PEAK_KWH_4)
+			->setCellValue('F12', $PEAK_KWH_5)
+			->setCellValue('G12', $PEAK_KWH_6)
+			->setCellValue('H12', $PEAK_KWH_7)
+			->setCellValue('I12', $PEAK_KWH_8)
+			->setCellValue('J12', $PEAK_KWH_9)
+			->setCellValue('K12', $PEAK_KWH_10)
+			->setCellValue('L12', $PEAK_KWH_11)
+			->setCellValue('M12', $PEAK_KWH_12)
+			->setCellValue('N12', $PEAK_KWH_TOTAL)
+			->setCellValue('O12', $PEAK_KWH_PERCENT)
 			;
 
 //HALF_PEAK_KWH   半尖峰度數(KWh)
 $objPHPExcel->setActiveSheetIndex(0)
 
-			->setCellValue('B12', $HALF_PEAK_KWH_1)
-			->setCellValue('C12', $HALF_PEAK_KWH_2)
-			->setCellValue('D12', $HALF_PEAK_KWH_3)
-			->setCellValue('E12', $HALF_PEAK_KWH_4)
-			->setCellValue('F12', $HALF_PEAK_KWH_5)
-			->setCellValue('G12', $HALF_PEAK_KWH_6)
-			->setCellValue('H12', $HALF_PEAK_KWH_7)
-			->setCellValue('I12', $HALF_PEAK_KWH_8)
-			->setCellValue('J12', $HALF_PEAK_KWH_9)
-			->setCellValue('K12', $HALF_PEAK_KWH_10)
-			->setCellValue('L12', $HALF_PEAK_KWH_11)
-			->setCellValue('M12', $HALF_PEAK_KWH_12)
-			->setCellValue('N12', $HALF_PEAK_KWH_TOTAL)
-			->setCellValue('O12', $HALF_PEAK_KWH_PERCENT)
+			->setCellValue('B13', $HALF_PEAK_KWH_1)
+			->setCellValue('C13', $HALF_PEAK_KWH_2)
+			->setCellValue('D13', $HALF_PEAK_KWH_3)
+			->setCellValue('E13', $HALF_PEAK_KWH_4)
+			->setCellValue('F13', $HALF_PEAK_KWH_5)
+			->setCellValue('G13', $HALF_PEAK_KWH_6)
+			->setCellValue('H13', $HALF_PEAK_KWH_7)
+			->setCellValue('I13', $HALF_PEAK_KWH_8)
+			->setCellValue('J13', $HALF_PEAK_KWH_9)
+			->setCellValue('K13', $HALF_PEAK_KWH_10)
+			->setCellValue('L13', $HALF_PEAK_KWH_11)
+			->setCellValue('M13', $HALF_PEAK_KWH_12)
+			->setCellValue('N13', $HALF_PEAK_KWH_TOTAL)
+			->setCellValue('O13', $HALF_PEAK_KWH_PERCENT)
+			;
+
+//SATURDAY_HALF_PEAK_KWH   週六半尖峰度數(KWh)
+$objPHPExcel->setActiveSheetIndex(0)
+
+			->setCellValue('B14', $SATURDAY_HALF_PEAK_KWH_1)
+			->setCellValue('C14', $SATURDAY_HALF_PEAK_KWH_2)
+			->setCellValue('D14', $SATURDAY_HALF_PEAK_KWH_3)
+			->setCellValue('E14', $SATURDAY_HALF_PEAK_KWH_4)
+			->setCellValue('F14', $SATURDAY_HALF_PEAK_KWH_5)
+			->setCellValue('G14', $SATURDAY_HALF_PEAK_KWH_6)
+			->setCellValue('H14', $SATURDAY_HALF_PEAK_KWH_7)
+			->setCellValue('I14', $SATURDAY_HALF_PEAK_KWH_8)
+			->setCellValue('J14', $SATURDAY_HALF_PEAK_KWH_9)
+			->setCellValue('K14', $SATURDAY_HALF_PEAK_KWH_10)
+			->setCellValue('L14', $SATURDAY_HALF_PEAK_KWH_11)
+			->setCellValue('M14', $SATURDAY_HALF_PEAK_KWH_12)
+			->setCellValue('N14', $SATURDAY_HALF_PEAK_KWH_TOTAL)
+			->setCellValue('O14', $SATURDAY_HALF_PEAK_KWH_PERCENT)
 			;
 
 //OFF_PEAK_KWH   離峰度數(KWh)
 $objPHPExcel->setActiveSheetIndex(0)	
 
-			->setCellValue('B13', $OFF_PEAK_KWH_1)
-			->setCellValue('C13', $OFF_PEAK_KWH_2)
-			->setCellValue('D13', $OFF_PEAK_KWH_3)
-			->setCellValue('E13', $OFF_PEAK_KWH_4)
-			->setCellValue('F13', $OFF_PEAK_KWH_5)
-			->setCellValue('G13', $OFF_PEAK_KWH_6)
-			->setCellValue('H13', $OFF_PEAK_KWH_7)
-			->setCellValue('I13', $OFF_PEAK_KWH_8)
-			->setCellValue('J13', $OFF_PEAK_KWH_9)
-			->setCellValue('K13', $OFF_PEAK_KWH_10)
-			->setCellValue('L13', $OFF_PEAK_KWH_11)
-			->setCellValue('M13', $OFF_PEAK_KWH_12)
-			->setCellValue('N13', $OFF_PEAK_KWH_TOTAL)
-			->setCellValue('O13', $OFF_PEAK_KWH_PERCENT)
+			->setCellValue('B15', $OFF_PEAK_KWH_1)
+			->setCellValue('C15', $OFF_PEAK_KWH_2)
+			->setCellValue('D15', $OFF_PEAK_KWH_3)
+			->setCellValue('E15', $OFF_PEAK_KWH_4)
+			->setCellValue('F15', $OFF_PEAK_KWH_5)
+			->setCellValue('G15', $OFF_PEAK_KWH_6)
+			->setCellValue('H15', $OFF_PEAK_KWH_7)
+			->setCellValue('I15', $OFF_PEAK_KWH_8)
+			->setCellValue('J15', $OFF_PEAK_KWH_9)
+			->setCellValue('K15', $OFF_PEAK_KWH_10)
+			->setCellValue('L15', $OFF_PEAK_KWH_11)
+			->setCellValue('M15', $OFF_PEAK_KWH_12)
+			->setCellValue('N15', $OFF_PEAK_KWH_TOTAL)
+			->setCellValue('O15', $OFF_PEAK_KWH_PERCENT)
 			;	
 
 //KWH   總度數(KWh)
 $objPHPExcel->setActiveSheetIndex(0)	
 
-			->setCellValue('B14', $KWH_1)
-			->setCellValue('C14', $KWH_2)
-			->setCellValue('D14', $KWH_3)
-			->setCellValue('E14', $KWH_4)
-			->setCellValue('F14', $KWH_5)
-			->setCellValue('G14', $KWH_6)
-			->setCellValue('H14', $KWH_7)
-			->setCellValue('I14', $KWH_8)
-			->setCellValue('J14', $KWH_9)
-			->setCellValue('K14', $KWH_10)
-			->setCellValue('L14', $KWH_11)
-			->setCellValue('M14', $KWH_12)
-			->setCellValue('N14', $KWH_TOTAL)
-			->setCellValue('O14', $KWH_PERCENT)
+			->setCellValue('B16', $KWH_1)
+			->setCellValue('C16', $KWH_2)
+			->setCellValue('D16', $KWH_3)
+			->setCellValue('E16', $KWH_4)
+			->setCellValue('F16', $KWH_5)
+			->setCellValue('G16', $KWH_6)
+			->setCellValue('H16', $KWH_7)
+			->setCellValue('I16', $KWH_8)
+			->setCellValue('J16', $KWH_9)
+			->setCellValue('K16', $KWH_10)
+			->setCellValue('L16', $KWH_11)
+			->setCellValue('M16', $KWH_12)
+			->setCellValue('N16', $KWH_TOTAL)
+			->setCellValue('O16', $KWH_PERCENT)
 			;
 
 // 設定總度數底色
-$objPHPExcel->getActiveSheet()->getStyle('A14:O14')->applyFromArray(
+$objPHPExcel->getActiveSheet()->getStyle('A16:O16')->applyFromArray(
     array(
         'fill' => array(
             'type'  => PHPExcel_Style_Fill::FILL_SOLID,
@@ -767,18 +840,18 @@ $objPHPExcel->getActiveSheet()->getStyle('A14:O14')->applyFromArray(
 //PF   功率因數(%)
 $objPHPExcel->setActiveSheetIndex(0)	
 
-			->setCellValue('B15', $PF_1)
-			->setCellValue('C15', $PF_2)
-			->setCellValue('D15', $PF_3)
-			->setCellValue('E15', $PF_4)
-			->setCellValue('F15', $PF_5)
-			->setCellValue('G15', $PF_6)
-			->setCellValue('H15', $PF_7)
-			->setCellValue('I15', $PF_8)
-			->setCellValue('J15', $PF_9)
-			->setCellValue('K15', $PF_10)
-			->setCellValue('L15', $PF_11)
-			->setCellValue('M15', $PF_12)
+			->setCellValue('B17', $PF_1)
+			->setCellValue('C17', $PF_2)
+			->setCellValue('D17', $PF_3)
+			->setCellValue('E17', $PF_4)
+			->setCellValue('F17', $PF_5)
+			->setCellValue('G17', $PF_6)
+			->setCellValue('H17', $PF_7)
+			->setCellValue('I17', $PF_8)
+			->setCellValue('J17', $PF_9)
+			->setCellValue('K17', $PF_10)
+			->setCellValue('L17', $PF_11)
+			->setCellValue('M17', $PF_12)
 			;
 
 

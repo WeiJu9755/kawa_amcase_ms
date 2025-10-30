@@ -45,7 +45,7 @@ $current_year = $_GET['current_year'];
 if (!isset($_GET['current_year']))
 	$current_year = date('Y');
 
-$case_id = "c1";
+$case_id = "C1";
 
 
 $mylang = $_COOKIE["lang"];
@@ -135,11 +135,13 @@ $mDB->query($Qry);
 
 $m_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_HALF_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
+$m_SATURDAY_HALF_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_OFF_PEAK_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_DEMAND_KW = array(0,0,0,0,0,0,0,0,0,0,0,0);
 
 $m_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_HALF_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
+$m_SATURDAY_HALF_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_OFF_PEAK_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 $m_KWH = array(0,0,0,0,0,0,0,0,0,0,0,0);
 
@@ -156,9 +158,11 @@ if ($rowCount > 0) {
 		$DEMAND_KW = $PA310_row['DEMAND_KW'];
 		$PEAK_KW = $PA310_row['PEAK_KW'];
 		$HALF_PEAK_KW = $PA310_row['HALF_PEAK_KW'];
+		$SATURDAY_HALF_PEAK_KW = $PA310_row['SATURDAY_HALF_PEAK_KW'];
 		$OFF_PEAK_KW = $PA310_row['OFF_PEAK_KW'];
 		$PEAK_KWH = $PA310_row['PEAK_KWH'];
 		$HALF_PEAK_KWH = $PA310_row['HALF_PEAK_KWH'];
+		$SATURDAY_HALF_PEAK_KWH = $PA310_row['SATURDAY_HALF_PEAK_KWH'];
 		$OFF_PEAK_KWH = $PA310_row['OFF_PEAK_KWH'];
 		$KWH = $PA310_row['KWH'];
 		$PF = $PA310_row['PF'];
@@ -170,9 +174,11 @@ if ($rowCount > 0) {
 			,$DEMAND_KW
 			,$PEAK_KW
 			,$HALF_PEAK_KW
+			,$SATURDAY_HALF_PEAK_KW
 			,$OFF_PEAK_KW
 			,$PEAK_KWH
 			,$HALF_PEAK_KWH
+			,$SATURDAY_HALF_PEAK_KWH
 			,$OFF_PEAK_KWH
 			,$KWH
 			,$PF
@@ -181,11 +187,13 @@ if ($rowCount > 0) {
 
 		$m_PEAK_KW[$current_month-1] = round($PEAK_KW,2);
 		$m_HALF_PEAK_KW[$current_month-1] = round($HALF_PEAK_KW,2);
+		$m_SATURDAY_HALF_PEAK_KW[$current_month-1] = round($SATURDAY_HALF_PEAK_KW,2);
 		$m_OFF_PEAK_KW[$current_month-1] = round($OFF_PEAK_KW,2);
 		$m_DEMAND_KW[$current_month-1] = round($DEMAND_KW,2);
 
 		$m_PEAK_KWH[$current_month-1] = round($PEAK_KWH,2);
 		$m_HALF_PEAK_KWH[$current_month-1] = round($HALF_PEAK_KWH,2);
+		$m_SATURDAY_HALF_PEAK_KWH[$current_month-1] = round($SATURDAY_HALF_PEAK_KWH,2);
 		$m_OFF_PEAK_KWH[$current_month-1] = round($OFF_PEAK_KWH,2);
 		$m_KWH[$current_month-1] = round($KWH,2);
 
@@ -220,6 +228,9 @@ if ($count > 0) {
 		$HALF_PEAK_KW = "HALF_PEAK_KW"."_".$i;
 		$$HALF_PEAK_KW = "_";
 
+		$SATURDAY_HALF_PEAK_KW = "SATURDAY_HALF_PEAK_KW"."_".$i;
+		$$SATURDAY_HALF_PEAK_KW = "_";
+
 		$OFF_PEAK_KW = "OFF_PEAK_KW"."_".$i;
 		$$OFF_PEAK_KW = "_";
 
@@ -228,6 +239,9 @@ if ($count > 0) {
 
 		$HALF_PEAK_KWH = "HALF_PEAK_KWH"."_".$i;
 		$$HALF_PEAK_KWH = "_";
+
+		$SATURDAY_HALF_PEAK_KWH = "SATURDAY_HALF_PEAK_KWH"."_".$i;
+		$$SATURDAY_HALF_PEAK_KWH = "_";
 
 		$OFF_PEAK_KWH = "OFF_PEAK_KWH"."_".$i;
 		$$OFF_PEAK_KWH = "_";
@@ -245,9 +259,11 @@ if ($count > 0) {
 
 	$PEAK_KW_MAX = 0;
 	$HALF_PEAK_KW_MAX = 0;
+	$SATURDAY_HALF_PEAK_KW_MAX = 0;
 	$OFF_PEAK_KW_MAX = 0;
 	$PEAK_KWH_TOTAL = 0;
 	$HALF_PEAK_KWH_TOTAL = 0;
+	$SATURDAY_HALF_PEAK_KWH_TOTAL = 0;
 	$OFF_PEAK_KWH_TOTAL = 0;
 	$KWH_TOTAL = 0;
 
@@ -284,6 +300,12 @@ if ($count > 0) {
 			$HALF_PEAK_KW_MAX = $val[$k];
 
 		$k++;
+		$SATURDAY_HALF_PEAK_KW = "SATURDAY_HALF_PEAK_KW"."_".$current_month;
+		$$SATURDAY_HALF_PEAK_KW = number_format2($val[$k],2);
+		if ($val[$k] > $SATURDAY_HALF_PEAK_KW_MAX)
+			$SATURDAY_HALF_PEAK_KW_MAX = $val[$k];
+
+		$k++;
 		$OFF_PEAK_KW = "OFF_PEAK_KW"."_".$current_month;
 		$$OFF_PEAK_KW = number_format2($val[$k],2);
 		if ($val[$k] > $OFF_PEAK_KW_MAX)
@@ -298,6 +320,11 @@ if ($count > 0) {
 		$HALF_PEAK_KWH = "HALF_PEAK_KWH"."_".$current_month;
 		$$HALF_PEAK_KWH = number_format2($val[$k],2);
 		$HALF_PEAK_KWH_TOTAL += $val[$k];
+
+		$k++;
+		$SATURDAY_HALF_PEAK_KWH = "SATURDAY_HALF_PEAK_KWH"."_".$current_month;
+		$$SATURDAY_HALF_PEAK_KWH = number_format2($val[$k],2);
+		$SATURDAY_HALF_PEAK_KWH_TOTAL += $val[$k];
 
 		$k++;
 		$OFF_PEAK_KWH = "OFF_PEAK_KWH"."_".$current_month;
@@ -318,18 +345,22 @@ if ($count > 0) {
 
 	$PEAK_KW_MAX = number_format2($PEAK_KW_MAX,2);
 	$HALF_PEAK_KW_MAX = number_format2($HALF_PEAK_KW_MAX,2);
+	$SATURDAY_HALF_PEAK_KW_MAX = number_format2($SATURDAY_HALF_PEAK_KW_MAX,2);
 	$OFF_PEAK_KW_MAX = number_format2($OFF_PEAK_KW_MAX,2);
 	$PEAK_KWH_TOTAL = number_format2($PEAK_KWH_TOTAL,2);
 	$HALF_PEAK_KWH_TOTAL = number_format2($HALF_PEAK_KWH_TOTAL,2);
+	$SATURDAY_HALF_PEAK_KWH_TOTAL = number_format2($SATURDAY_HALF_PEAK_KWH_TOTAL,2);
 	$OFF_PEAK_KWH_TOTAL = number_format2($OFF_PEAK_KWH_TOTAL,2);
 	$KWH_TOTAL = number_format2($KWH_TOTAL,2);
 
 
 	$PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $PEAK_KW_PERCENT = round($PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
 	$HALF_PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $HALF_PEAK_KW_PERCENT = round($HALF_PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
+	$SATURDAY_HALF_PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $SATURDAY_HALF_PEAK_KW_PERCENT = round($SATURDAY_HALF_PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
 	$OFF_PEAK_KW_PERCENT = ""; if ($DEMAND_KW_MAX > 0) $OFF_PEAK_KW_PERCENT = round($OFF_PEAK_KW_MAX/$DEMAND_KW_MAX*100,1)."%";
 	$PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $PEAK_KWH_PERCENT = round($PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
 	$HALF_PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $HALF_PEAK_KWH_PERCENT = round($HALF_PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
+	$SATURDAY_HALF_PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $SATURDAY_HALF_PEAK_KWH_PERCENT = round($SATURDAY_HALF_PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
 	$OFF_PEAK_KWH_PERCENT = ""; if ($KWH_TOTAL > 0) $OFF_PEAK_KWH_PERCENT = round($OFF_PEAK_KWH_TOTAL/$KWH_TOTAL*100,1)."%";
 	$KWH_PERCENT = "100%";
 
@@ -354,8 +385,8 @@ $show_analysis.=<<<EOT
 				<th scope="col" class="size14 bg-silver" style="padding: 10px 0;width:60px;"><b>10月</b></th>
 				<th scope="col" class="size14 bg-silver" style="padding: 10px 0;width:60px;"><b>11月</b></th>
 				<th scope="col" class="size14 bg-silver" style="padding: 10px 0;width:60px;"><b>12月</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:70px;"><b>合計</b></th>
-				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:50px;"><b>%</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:70px;"><b>最高/合計</b></th>
+				<th scope="col" class="size14 bg-aqua" style="padding: 10px 0;width:50px;"><b>比重%</b></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -394,7 +425,7 @@ $show_analysis.=<<<EOT
 				<td></td>
 			</tr>
 			<tr  class="text-center" style="background-color: #FFDBDB;">
-				<th scope="row" class="text-nowrap text-right" style="vertical-align: middle;">經常契約(KW)</th>
+				<th scope="row" class="text-nowrap text-right" style="vertical-align: middle;">經常契約容量(KW)</th>
 				<td>$DEMAND_KW_1</td>
 				<td>$DEMAND_KW_2</td>
 				<td>$DEMAND_KW_3</td>
@@ -413,10 +444,10 @@ $show_analysis.=<<<EOT
 EOT;
 
 
-//PEAK_KW   經常最高需量(KW)
+//PEAK_KW   尖峰需量(KW)
 $show_analysis.=<<<EOT
 			<tr class="text-center">
-				<th scope="row" class="text-nowrap text-right">經常最高需量(KW)</th>
+				<th scope="row" class="text-nowrap text-right">尖峰需量(KW)</th>
 				<td>$PEAK_KW_1</td>
 				<td>$PEAK_KW_2</td>
 				<td>$PEAK_KW_3</td>
@@ -455,6 +486,27 @@ $show_analysis.=<<<EOT
 			</tr>
 EOT;
 
+//SATURDAY_HALF_PEAK_KW   週六半尖峰需量(KW)
+$show_analysis.=<<<EOT
+			<tr class="text-center">
+				<th scope="row" class="text-nowrap text-right">週六半尖峰需量(KW)</th>
+				<td>$SATURDAY_HALF_PEAK_KW_1</td>
+				<td>$SATURDAY_HALF_PEAK_KW_2</td>
+				<td>$SATURDAY_HALF_PEAK_KW_3</td>
+				<td>$SATURDAY_HALF_PEAK_KW_4</td>
+				<td>$SATURDAY_HALF_PEAK_KW_5</td>
+				<td>$SATURDAY_HALF_PEAK_KW_6</td>
+				<td>$SATURDAY_HALF_PEAK_KW_7</td>
+				<td>$SATURDAY_HALF_PEAK_KW_8</td>
+				<td>$SATURDAY_HALF_PEAK_KW_9</td>
+				<td>$SATURDAY_HALF_PEAK_KW_10</td>
+				<td>$SATURDAY_HALF_PEAK_KW_11</td>
+				<td>$SATURDAY_HALF_PEAK_KW_12</td>
+				<td>$SATURDAY_HALF_PEAK_KW_MAX</td>
+				<td>$SATURDAY_HALF_PEAK_KW_PERCENT</td>
+			</tr>
+EOT;
+
 //OFF_PEAK_KW   離峰需量(KW)
 $show_analysis.=<<<EOT
 			<tr class="text-center">
@@ -478,10 +530,10 @@ EOT;
 
 
 
-//PEAK_KWH   經常(尖峰)度數(KWh)
+//PEAK_KWH   尖峰度數(KWh)
 $show_analysis.=<<<EOT
 			<tr class="text-center">
-				<th scope="row" class="text-nowrap text-right">經常(尖峰)度數(KWh)</th>
+				<th scope="row" class="text-nowrap text-right">尖峰度數(KWh)</th>
 				<td>$PEAK_KWH_1</td>
 				<td>$PEAK_KWH_2</td>
 				<td>$PEAK_KWH_3</td>
@@ -517,6 +569,27 @@ $show_analysis.=<<<EOT
 				<td>$HALF_PEAK_KWH_12</td>
 				<td>$HALF_PEAK_KWH_TOTAL</td>
 				<td>$HALF_PEAK_KWH_PERCENT</td>
+			</tr>
+EOT;
+
+//SATURDAY_HALF_PEAK_KWH   週六半尖峰度數(KWh)
+$show_analysis.=<<<EOT
+			<tr class="text-center">
+				<th scope="row" class="text-nowrap text-right">週六半尖峰度數(KWh)</th>
+				<td>$SATURDAY_HALF_PEAK_KWH_1</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_2</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_3</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_4</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_5</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_6</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_7</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_8</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_9</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_10</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_11</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_12</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_TOTAL</td>
+				<td>$SATURDAY_HALF_PEAK_KWH_PERCENT</td>
 			</tr>
 EOT;
 
@@ -599,7 +672,7 @@ EOT;
 
 $alist_kw = array();
 
-//經常最高需量(KW)
+//尖峰需量(KW)
 $s_data = array();
 $bool = false;
 for ($i = 11; $i >= 0; $i--) {
@@ -618,7 +691,7 @@ if (!$bool)
 
 $alist_kw[]=array(
 	"type"=>"column"
-	,"name"=>"經常最高需量(KW)"
+	,"name"=>"尖峰需量(KW)"
 	,"data"=>array_reverse($s_data)
 
 );
@@ -647,6 +720,28 @@ $alist_kw[]=array(
 	,"data"=>array_reverse($s_data)
 );
 
+//週六半尖峰需量(KW)
+$s_data = array();
+$bool = false;
+for ($i = 11; $i >= 0; $i--) {
+	if ($m_SATURDAY_HALF_PEAK_KW[$i] == 0) {
+		if ($bool == true)
+			$s_data[] = 0;
+		else
+			$s_data[] = "";
+	} else {
+		$s_data[] = $m_SATURDAY_HALF_PEAK_KW[$i];
+		$bool = true;
+	}
+}
+if (!$bool)
+	$s_data = array('','','','','','','','','','','',0);
+
+$alist_kw[]=array(
+	"type"=>"column"
+	,"name"=>"週六半尖峰需量(KW)"
+	,"data"=>array_reverse($s_data)
+);
 
 //離峰需量(KW)
 $s_data = array();
@@ -672,7 +767,7 @@ $alist_kw[]=array(
 );
 
 
-//經常契約(KW)
+//經常契約容量(KW)
 $s_data = array();
 $bool = false;
 for ($i = 11; $i >= 0; $i--) {
@@ -691,7 +786,7 @@ if (!$bool)
 
 $alist_kw[]=array(
 	"type"=>"spline"
-	,"name"=>"經常契約(KW)"
+	,"name"=>"經常契約容量(KW)"
 	,"data"=>array_reverse($s_data)
 	,"marker"=>array(
 		"lineWidth"=> 2,
@@ -709,7 +804,7 @@ $series_data_kw = json_encode($alist_kw);
 
 $alist_kwh = array();
 
-//經常(尖峰)度數(KWh)
+//尖峰度數(KWh)
 $s_data = array();
 $bool = false;
 for ($i = 11; $i >= 0; $i--) {
@@ -728,7 +823,7 @@ if (!$bool)
 
 $alist_kwh[]=array(
 	"type"=>"column"
-	,"name"=>"經常(尖峰)度數(KWh)"
+	,"name"=>"尖峰度數(KWh)"
 	,"data"=>array_reverse($s_data)
 
 );
@@ -757,6 +852,28 @@ $alist_kwh[]=array(
 	,"data"=>array_reverse($s_data)
 );
 
+//週六半尖峰度數(KWh)
+$s_data = array();
+$bool = false;
+for ($i = 11; $i >= 0; $i--) {
+	if ($m_SATURDAY_HALF_PEAK_KWH[$i] == 0) {
+		if ($bool == true)
+			$s_data[] = 0;
+		else
+			$s_data[] = "";
+	} else {
+		$s_data[] = $m_SATURDAY_HALF_PEAK_KWH[$i];
+		$bool = true;
+	}
+}
+if (!$bool)
+	$s_data = array('','','','','','','','','','','',0);
+
+$alist_kwh[]=array(
+	"type"=>"column"
+	,"name"=>"週六半尖峰度數(KWh)"
+	,"data"=>array_reverse($s_data)
+);
 
 //離峰度數(KWh)
 $s_data = array();
@@ -828,20 +945,35 @@ $Close = getlang("關閉");
 $Print = getlang("列印");
 
 
+$show_top_tools=<<<EOT
+	<div class="mytable" style="width:100%;background-color:#fff;padding: 20px 10px 0 10px;opacity: 0.9;">
+		<div class="myrow">
+			<div class="mycell" style="width:20%;padding: 10px;vertical-align: bottom;">
+				<a role="button" class="btn btn-light float-left " href="/index.php?case_id=$case_id&fm=analysis"><i class="bi bi-chevron-left"></i>&nbsp;回上頁</a>
+			</div>
+			<div class="mycell weight" style="width:60%;padding: 10px 5px;text-align:center;">
+				<h3>$Title_01</h3>
+			</div>
+			<div class="mycell" style="width:20%;text-align:right;padding: 10px;vertical-align: bottom;">
+			</div>
+		</div>
+	</div>
+	<hr class="half-rule" style="margin: 0;padding:0;border-color:$panel_bgcolor;">
+EOT;
+
+
+
+
 if (!($detect->isMobile() || $detect->isTablet())) {
 
 $show_report=<<<EOT
-<div class="w-auto" style="position:fixed;top: 10px; right:10px;z-index: 9999;">
-	<button id="close" class="btn btn-danger p-2 px-3" type="button" onclick="window.close();"><i class="bi bi-power"></i>&nbsp;關閉</button>
-</div>
-<h3 class="weight text-center p-3">$Title_01</h3>
-<hr class="half-rule" style="margin: 0;padding:0;border-color:$panel_bgcolor;">
+$show_top_tools
 <div class="mytable" style="width:100%;background-color:#fff;padding: 0 10px;">
 	<div class="myrow">
 		<div class="mycell" style="width:100%;padding: 0;vertical-align: bottom;">
 			<div style="width:auto;min-height:500px;margin: 0 auto;padding:20px;">
 				<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year &nbsp;&nbsp;&nbsp;&nbsp;
-			<a role="button" class="btn btn-primary" href="/index.php?ch=grPA310_year_summary_excel&site_db=$site_db&case_id=$case_id&current_year=$current_year&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a></div>
+				<a role="button" class="btn btn-primary" href="/index.php?ch=grPA310_year_summary_excel&site_db=$site_db&case_id=$case_id&current_year=$current_year&current_month=$current_month&fm=$fm"><i class="fas fa-file-export"></i>&nbsp;匯出Excel檔</a></div>
 				<div style="float:right;width:150px;text-align:right;padding: 5px 20px 5px 0;margin:-40px 0 20px 0;"></div>
 				<div style="width:100%;">
 					$show_analysis
@@ -858,11 +990,7 @@ EOT;
 
 $show_report=<<<EOT
 <div style="width:100%;">
-	<div class="w-auto" style="position:fixed;top: 10px; right:10px;z-index: 9999;">
-		<button id="close" class="btn btn-danger p-2 px-3" type="button" onclick="window.close();"><i class="bi bi-power"></i>&nbsp;關閉</button>
-	</div>
-	<h3 class="weight text-left p-3">$Title_01</h3>
-	<hr class="half-rule" style="margin: 0;padding:0;border-color:$panel_bgcolor;">
+	$show_top_tools
 	<div style="width:100%;max-width:1600px;min-height:500px;margin: 0 auto;padding:20px;background-color:#fff;">
 		<div class="text-nowrap" style="width:300px;text-align:center;margin: 20px auto;">$Title_02 : $m_year</div>
 		<div style="float:right;width:150px;text-align:right;padding: 5px 20px 5px 0;margin:-40px 0 20px 0;"></div>
@@ -879,6 +1007,7 @@ EOT;
 	
 }
 	
+
 
 $show_center=<<<EOT
 <script src="/js/highstock.js"></script>
