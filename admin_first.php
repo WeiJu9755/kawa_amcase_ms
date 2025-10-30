@@ -341,6 +341,13 @@ switch($ch) {
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;
+	case 'grPA310_day_summary_excel':
+		if (empty($sid))
+			$sid = "pjhome01";
+		$modal = $m_pub_modal."/green/amcase_ms/grPA310_day_summary_excel.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		break;
 	case 'report_power_demand_quarter':
 		if (empty($sid))
 			$sid = "pjhome01";
